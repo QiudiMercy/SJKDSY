@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅游助手</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="./iconfont.js"></script>
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=ieTgaCTv1rAb1VggApZB259viQMr2hWG"></script>
+    <script src="script.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="header">
+            <div class="header-left">
+                <div class="user-avatar">
+                    <span class="user-score">用户名</span>
+                </div>
+            </div>
+            <div class="header-center">
+                <!-- 金币 -->
+                <div class="user-info-item">
+                    <svg class="icon" aria-hidden="true">
+                        <use xlink:href="#icon-jinbi"></use>
+                    </svg>
+                    <span class="item-label">金币</span>
+                    <span class="item-value">1000</span>
+                </div>
+                <!-- 经验 -->
+                <div class="user-info-item">
+                    <svg class="icon" aria-hidden="true">
+                        <use xlink:href="#icon-jingyan"></use>
+                    </svg>
+                    <span class="item-label">经验</span>
+                    <span class="item-value">1000</span>
+                </div>
+                <!-- 心情值 -->
+                <div class="user-info-item">
+                    <svg class="icon" aria-hidden="true">
+                        <use xlink:href="#icon-xinqingzhi_zhengke"></use>
+                    </svg>
+                    <span class="item-label">心情值</span>
+                    <span class="item-value">100</span>
+                </div>
+                <!-- 体力 -->
+                <div class="user-info-item">
+                    <svg class="icon" aria-hidden="true">
+                        <use xlink:href="#icon-yonghu_tili"></use>
+                    </svg>
+                    <span class="item-label">体力</span>
+                    <span class="item-value">100</span>
+                </div>
+                <!-- 饱食度 -->
+                <div class="user-info-item">
+                    <svg class="icon" aria-hidden="true">
+                        <use xlink:href="#icon-hanbao"></use>
+                    </svg>
+                    <span class="item-label">饱食度</span>
+                    <span class="item-value">80</span>
+                </div>
+            </div>
+           
+        </header>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <!-- 左侧地图区域 -->
+            <div class="left-panel">
+                <div id="map" class="map-panel"></div>
+            </div>
+
+            <!-- 右侧搜索和聊天区域 -->
+            <div class="right-panel">
+                <!-- 地点搜索 -->
+                <div class="search-panel">
+                    <h2 class="panel-title">地点搜索</h2>
+                    <div class="search-input-container">
+                        <input type="text" id="search-input" class="location-input common-input" placeholder="请输入地点">
+                        <button id="search-btn" class="search-button common-button">查找</button>
+                    </div>
+                </div>
+                
+                <!-- 聊天界面 -->
+                <div class="chat-panel">
+                    <h2 class="panel-title">带我玩</h2>
+                    <div class="chat-time" id="chat-time">00:00</div>
+                    <div class="chat-messages" id="chat-messages"></div>
+                    <div class="chat-input">
+                        <input type="text" id="message-input" class="common-input" placeholder="输入消息...">
+                        <button class="add-message-btn common-button" id="send-btn">发送</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

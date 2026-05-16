@@ -1,12 +1,15 @@
-from dataclasses import dataclass
-from datetime import datetime
+from fastapi.responses import JSONResponse
 
+def success(data=None, msg="success"):
+    return JSONResponse(content={
+        "code": 200,
+        "msg": msg,
+        "data": data
+    })
 
-@dataclass
-class Response:
-    """
-    大模型交互的响应对象
-    """
-    role: str
-    timestamp: datetime
-    content: str
+def error(code=400, msg="error", data=None):
+    return JSONResponse(status_code=code, content={
+        "code": code,
+        "msg": msg,
+        "data": data
+    })

@@ -1,81 +1,61 @@
-from takeme.tools.tool import Tool
-from takeme.states.state import State
+"""
+系统裁定器：检查 LLM 请求的状态修改是否合法，并生成系统消息
+"""
+from states.state import GameState
 
-class SendSystemMsg(Tool):
-
-    """
-    发送系统消息工具
-    """
-
-    name = "发送系统消息"
-    description = "给用户发送系统消息"
-
-    def execute(self, msg: str) -> str:
+class Referee:
+    @staticmethod
+    def validate_and_apply(state: GameState, updates: dict) -> dict:
         """
-        执行工具
-        """
-        return f"已向用户发送系统消息: {msg}"
-
-    def schema(self) -> dict:
-        """
-        工具模式
-        """
-        return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "msg": {
-                            "type": "string",
-                            "description": "要发送的系统消息内容，比如“触发决策：移动到十里店”"
-                        }
-                    }
-                },
-                "required": ["msg"]
-            }
+        updates 是 LLM 请求的更新，例如：
+        {
+            "money_delta": -35,
+            "stamina_delta": -5,
+            "mood_delta": 10,
+            "time_advance_min": 25,
+            "reason": "打车前往太古里"
         }
-
-class ModifyState(Tool):
-
-    """
-    修改状态工具
-    """
-
-    name = "修改状态"
-    description = "修改小爱的状态参数"
-
-    def __init__(self, state: State):
-        super().__init__()
-        self.state: State = state
-    
-    def execute(self, modify_state: dict) -> str:
+        返回系统裁定结果和最终应用后的状态快照
         """
-        修改状态
-        """
-        self.state.modify_params(**modify_state)
-        return f"已修改状态: {modify_state}"
+        logs = []
+        applied = {}
 
-    def schema(self) -> dict:
-        """
-        工具模式
-        """
+        # 金钱变动
+        if "money_delta" in updates and updates["money_delta"] != 0:
+            delta = int(updates["money_delta"])
+            if delta < 0 and state.money + delta < 0:
+                logs.append(f"余额不足以支付（需 {abs(delta)} 元，当前 {state.money} 元），操作被阻止")
+            else:
+                state.update_money(delta)
+                logs.append(f"余额 {'+' if delta>0 else ''}{delta} 元")
+                applied["money"] = state.money
+
+        # 体力变动
+        if "stamina_delta" in updates and updates["stamina_delta"] != 0:
+            delta = int(updates["stamina_delta"])
+            if delta < 0 and state.stamina + delta < 0:
+                logs.append(f"体力不足（需 {abs(delta)}，当前 {state.stamina}），操作被阻止")
+            else:
+                state.update_stamina(delta)
+                logs.append(f"体力 {'+' if delta>0 else ''}{delta}")
+                applied["stamina"] = state.stamina
+
+        # 心情变动
+        if "mood_delta" in updates and updates["mood_delta"] != 0:
+            delta = int(updates["mood_delta"])
+            state.update_mood(delta)
+            logs.append(f"心情 {'+' if delta>0 else ''}{delta}")
+            applied["mood"] = state.mood
+
+        # 时间推进
+        if "time_advance_min" in updates and updates["time_advance_min"] > 0:
+            mins = int(updates["time_advance_min"])
+            state.advance_time(mins)
+            logs.append(f"时间推进 {mins} 分钟")
+            applied["time"] = state.game_time
+
+        system_msg = updates.get("reason", "状态自动更新") + "。" + "；".join(logs) if logs else updates.get("reason", "")
         return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "modify_state": {
-                            "type": "dict",
-                            "description": "要修改的状态参数，只能是time、location、mood、power、money等中的一个或几个参数，比如{'time': +30, 'mood': -5} // 时间增加30分钟，情绪值减少5"
-                        }
-                    }
-                },
-                "required": ["modify_state"]
-            }
+            "system_reply": system_msg,
+            "applied_status": applied if applied else None
         }

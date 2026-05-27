@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pandas
+openai
+pydantic-settings
+pydantic
+sqlite3

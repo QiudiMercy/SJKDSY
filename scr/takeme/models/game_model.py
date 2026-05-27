@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime
+from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
@@ -18,3 +18,7 @@ class Game(Base):
     current_lat = Column(Float)
     current_location_name = Column(String)
     is_active = Column(Boolean, default=True)
+    current_fullness = Column(Integer, default=100)       # 饱食度 0-100
+    route_summary = Column(Text, nullable=True)            # JSON: 游玩路线地点列表
+    score = Column(Integer, nullable=True)                 # 最终评分 0-100
+    evaluation = Column(Text, nullable=True)               # 评价文案

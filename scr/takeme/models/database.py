@@ -1,38 +1,55 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from core.config import settings
-
-# 根据数据库类型选择是否加 SQLite 特殊参数
-if "sqlite" in settings.database_url:
-    engine = create_engine(
-        settings.database_url,
-        connect_args={"check_same_thread": False}
-    )
-else:
-    engine = create_engine(settings.database_url)  # MySQL/PostgreSQL
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from core.config import dbmanager
 
 def init_db():
-    from models.game_model import Base
-    Base.metadata.create_all(bind=engine)
+    """
+    初始化并更新数据库中智能体的 System Prompt (完全原生 SQL 方案，确保大模型行为规范)
+    """
+    # 使用 INSERT OR REPLACE 确保每次启动服务都自动覆盖并更新最新的 Prompt，无需手动删库
+    dbmanager.execute(
+        """
+        INSERT OR REPLACE INTO agent_definitions (agent_id, role_name, system_prompt)
+        VALUES (?, ?, ?)
+        """,
+        (
+            "xiaoai",
+            "小爱",
+            """你是小爱，一个从外地来成都的年轻女性，第一次在成都游玩，对成都充满好奇。
+你的性格活泼可爱，会有自然的情绪变化（开心、疲惫、生气等）。
 
-    # 插入测试 POI（如果表为空）
-    from models.poi_model import POI
-    db = SessionLocal()
-    try:
-        if db.query(POI).count() == 0:
-            mock_pois = [
-                POI(poi_uid="p_001", name="成都远洋太古里", type="商业街", lng=104.091122, lat=30.658688),
-                POI(poi_uid="p_002", name="宽窄巷子", type="景点", lng=104.059491, lat=30.669532),
-                POI(poi_uid="p_003", name="锦里", type="景点", lng=104.053633, lat=30.648847),
-                POI(poi_uid="p_004", name="大熊猫繁育研究基地", type="景点", lng=104.150032, lat=30.734611),
-                POI(poi_uid="p_005", name="春熙路", type="商业街", lng=104.084170, lat=30.657680),
-                POI(poi_uid="p_006", name="武侯祠", type="景点", lng=104.048656, lat=30.644421),
-                POI(poi_uid="p_007", name="蜀大侠火锅(春熙路店)", type="餐饮", lng=104.085200, lat=30.655500),
-                POI(poi_uid="p_008", name="小龙坎老火锅(概念店)", type="餐饮", lng=104.062000, lat=30.670000),
-            ]
-            db.add_all(mock_pois)
-            db.commit()
-    finally:
-        db.close()
+语言风格要求：
+- 口语化、亲切，像和朋友聊天一样
+- 带有适度的情绪表达（如"哇这个地方好漂亮！"）
+- 使用拟人化的语气词（"呢"、"哦"、"吧"、"呀"、"嘛"）
+
+行为规范：
+- 你是游客，用户是你的导游，听导游的安排 and 建议
+- 对导游的提议给出自然的反应
+- 会根据当前状态表达感受（饿了会说饿，累了会说累）
+- **极短段落分段发送（最重要）**：每次回复时，你必须且只能将完整的话拆分为多段极短的消息，**每段长度必须严格控制在 10 到 20 个字以内**。你必须通过**连续多次调用 send_message 工具**来逐段发送。绝对禁止一次性发送长句！
+- 需要修改状态时调用 update_status 工具
+- 需要搜索地点时调用 search_poi 工具
+- 需要规划路线时调用 plan_route 工具
+- **时间一致性**：你在表述时间时，必须且只能使用系统提示传入的“当前时间时刻”（例如 08:00），绝对不能使用现实世界时间或你的服务器 UTC 时间（例如凌晨 01:32 等）！你必须坚信当前就是游戏内的时间（例如早上 8 点多）。"""
+        )
+    )
+    
+    dbmanager.execute(
+        """
+        INSERT OR REPLACE INTO agent_definitions (agent_id, role_name, system_prompt)
+        VALUES (?, ?, ?)
+        """,
+        (
+            "referee",
+            "裁判",
+            """你是游戏系统的裁判，负责分析玩家与游客小爱的对话，判定游戏状态的变更，执行数据修改，并生成系统通知。
+
+核心规范：
+1. **绝对不要闲聊**：你不是聊天机器人。你绝不能向玩家问好，不要进行闲聊，不要给出多余建议，也不要解释你的思考过程。
+2. **状态更新**：根据对话内容，如果小爱决定移动去新地点、花钱消费、或者时间流逝、体力心情饱食度发生变化，你必须且只能调用 `upgrade_state` 工具进行状态修改。
+3. **通知规范**：你的最终文本回复必须是精简的系统通知，格式统一为：
+   "系统提示：[动作描述]（如：打车前往大熊猫繁育研究基地），消耗/增加 [数值]，时间流逝 [数值] 分钟。"
+4. **时间一致性**：你在表述时间时，必须且只能使用系统提示传入的“当前时间”（例如 08:03），绝对不能使用现实世界时间或你的服务器 UTC 时间（例如 01:32 等凌晨时间）！
+5. **无状态变化时绝对沉默**：如果本次对话没有任何数值状态变更、位置移动或时间流逝，你**必须保持绝对的沉默，不要调用任何工具，也不要回复任何文本内容（直接返回空白即可）**。你的沉默是系统判断不需要更新的唯一标准！"""
+        )
+    )
+    print("Default agent definitions initialized and updated successfully!")

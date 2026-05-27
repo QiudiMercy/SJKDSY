@@ -305,38 +305,530 @@ body {
 
 
 
-/* 响应式设计 */
+/* =============================================================================
+   新增样式 — 视图切换、消息分类、搜索、路线、结算
+   ============================================================================= */
+
+/* ---- 视图切换 ---- */
+.view { }
+
+.hidden { display: none !important; }
+
+/* ---- 开始页 ---- */
+.start-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+.start-hero {
+    text-align: center;
+    background: #fff;
+    border-radius: 16px;
+    padding: 60px 40px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    margin-bottom: 40px;
+}
+.start-title {
+    font-size: 48px;
+    color: #1890FF;
+    margin-bottom: 8px;
+    letter-spacing: 4px;
+}
+.start-subtitle {
+    font-size: 18px;
+    color: #999;
+    margin-bottom: 24px;
+}
+.start-desc {
+    font-size: 15px;
+    line-height: 2;
+    color: #555;
+    margin-bottom: 32px;
+}
+.btn-primary {
+    background: #1890FF;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s, transform 0.15s;
+}
+.btn-primary:hover { background: #40a9ff; }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled { background: #b0d4ff; cursor: not-allowed; }
+.btn-large {
+    padding: 14px 48px;
+    font-size: 18px;
+    border-radius: 12px;
+}
+.btn-small {
+    padding: 8px 20px;
+    font-size: 13px;
+    border-radius: 6px;
+}
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+.btn-secondary:hover { background: #e0e0e0; }
+
+/* ---- 战绩列表 ---- */
+.section-title {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.records-list {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+.record-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+.record-item:last-child { border-bottom: none; }
+.record-time {
+    color: #999;
+    white-space: nowrap;
+}
+.record-score {
+    color: #1890FF;
+    font-weight: bold;
+}
+.record-money { color: #888; }
+.record-eval {
+    flex: 1;
+    min-width: 120px;
+    color: #666;
+    font-size: 13px;
+    text-align: right;
+}
+.records-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+}
+.page-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #d9d9d9;
+    background: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    color: #333;
+    transition: all 0.2s;
+}
+.page-btn:hover { border-color: #1890FF; color: #1890FF; }
+.page-btn.active {
+    background: #1890FF;
+    color: #fff;
+    border-color: #1890FF;
+}
+
+.loading-text { color: #999; text-align: center; padding: 20px; font-size: 14px; }
+.empty-text { color: #bbb; text-align: center; padding: 30px; font-size: 14px; }
+.error-text { color: #ff4d4f; text-align: center; padding: 20px; font-size: 14px; }
+
+/* ---- 状态栏 ---- */
+.location-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1890FF;
+}
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+}
+.stat-item .icon {
+    font-size: 18px;
+    color: #1890FF;
+}
+.stat-label {
+    font-size: 12px;
+    color: #999;
+}
+.stat-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    min-width: 32px;
+    text-align: center;
+    transition: color 0.3s;
+}
+.stat-critical { color: #ff4d4f !important; }
+.stat-warning { color: #faad14 !important; }
+
+/* ---- 主内容区 ---- */
+.main-content {
+    display: flex;
+    gap: 20px;
+    height: calc(100vh - 140px);
+}
+.left-panel { flex: 2; display: flex; flex-direction: column; }
+.right-panel { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 360px; }
+.map-panel {
+    flex: 1;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+/* ---- 搜索面板 (覆盖旧规则) ---- */
+.search-panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    max-height: none;
+    position: relative;
+    z-index: 5;
+}
+.search-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.search-header .panel-title { margin-bottom: 0; }
+.transport-btns {
+    display: flex;
+    gap: 6px;
+}
+.transport-btn {
+    padding: 5px 12px;
+    border: 1.5px solid #1890FF;
+    border-radius: 16px;
+    background: #fff;
+    color: #1890FF;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.transport-btn:hover {
+    background: #1890FF;
+    color: #fff;
+}
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 20;
+    margin-top: 2px;
+    padding: 4px 0;
+}
+.search-result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.search-result-item:hover { background: #e6f7ff; }
+.search-result-item.selected { background: #bae7ff; }
+.result-info { display: flex; flex-direction: column; gap: 2px; }
+.result-name { font-size: 14px; font-weight: 500; color: #333; }
+.result-type { font-size: 12px; color: #999; }
+.result-distance { font-size: 13px; color: #1890FF; font-weight: 500; }
+
+/* ---- POI 详情卡片 ---- */
+.poi-detail-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 14px 16px;
+}
+.poi-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #999;
+    cursor: pointer;
+}
+.btn-close:hover { color: #333; }
+.poi-detail-body {
+    margin: 8px 0 12px;
+    font-size: 13px;
+    color: #666;
+    display: flex;
+    gap: 16px;
+}
+
+/* ---- 路线弹窗 ---- */
+.route-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+.route-modal-content {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    text-align: center;
+}
+.route-modal-content h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #333;
+}
+.route-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+.route-option {
+    padding: 14px 16px;
+    border: 2px solid #f0f0f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+.route-option:hover {
+    border-color: #1890FF;
+    background: #e6f7ff;
+}
+.route-method {
+    font-size: 16px;
+    font-weight: bold;
+    color: #1890FF;
+    margin-bottom: 6px;
+}
+.route-details {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: #666;
+    justify-content: center;
+}
+.stamina-gain { color: #52c41a; font-weight: bold; }
+.stamina-cost { color: #ff4d4f; font-weight: bold; }
+
+/* ---- 聊天面板 ---- */
+.chat-panel {
+    flex: 1;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+}
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.chat-hint {
+    text-align: center;
+    color: #ccc;
+    margin: auto;
+    font-size: 14px;
+}
+
+/* ---- 消息分类 ---- */
+.message { display: flex; max-width: 100%; }
+
+/* 用户消息 — 靠右，蓝色 */
+.msg-user { justify-content: flex-end; }
+.msg-user .message-bubble {
+    background: #1890FF;
+    color: #fff;
+    border-radius: 16px 16px 4px 16px;
+    padding: 10px 16px;
+    max-width: 70%;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+/* AI 消息 — 靠左，粉色 */
+.msg-ai { justify-content: flex-start; }
+.msg-ai .message-bubble {
+    background: #ffe6f0;
+    color: #333;
+    border-radius: 16px 16px 16px 4px;
+    padding: 10px 16px;
+    max-width: 70%;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+/* 系统消息 — 居中，灰色小字 */
+.msg-system { justify-content: center; }
+.message-system-text {
+    background: #f5f5f5;
+    color: #999;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12px;
+    max-width: 80%;
+    text-align: center;
+}
+
+/* AI 正在输入动画 */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 16px;
+}
+.typing-indicator span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #d9d9d9;
+    animation: typingBounce 1.4s infinite ease-in-out;
+}
+.typing-indicator span:nth-child(1) { animation-delay: 0s; }
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+/* ---- 结算页 ---- */
+.settle-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+.settle-title {
+    font-size: 36px;
+    color: #333;
+    margin-bottom: 32px;
+}
+.settle-score-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+.settle-score {
+    font-size: 72px;
+    font-weight: bold;
+    color: #1890FF;
+    line-height: 1;
+}
+.settle-score-label {
+    font-size: 16px;
+    color: #999;
+    margin-top: 8px;
+}
+.settle-evaluation {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 28px;
+    line-height: 1.8;
+    padding: 0 20px;
+}
+.settle-route {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 32px;
+    text-align: left;
+}
+.settle-route h3 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 12px;
+    text-align: center;
+}
+.route-list {
+    padding-left: 24px;
+    color: #666;
+    font-size: 14px;
+    line-height: 2;
+}
+
+/* =============================================================================
+   响应式设计
+   ============================================================================= */
+
 /* 手机端 */
 @media screen and (max-width: 768px) {
     .main-content {
         flex-direction: column;
         height: auto;
     }
-    
-    .chat-panel, .map-panel, .search-panel {
-        width: 100%;
-        min-height: 400px;
+    .left-panel { min-height: 300px; }
+    .right-panel { min-width: 0; }
+    .map-panel { min-height: 300px; }
+    .chat-panel { min-height: 350px; }
+    .search-panel { min-height: auto; }
+    .header {
+        flex-wrap: wrap;
+        gap: 8px;
     }
+    .header-center {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .stat-item {
+        padding: 0 4px;
+    }
+    .start-title { font-size: 32px; }
+    .settle-score { font-size: 48px; }
+    .route-details { flex-direction: column; gap: 4px; }
 }
+
 /* 平板和电脑端 */
 @media screen and (min-width: 768px) {
     .app-container {
         padding: 10px;
-    }
-    
-    .header {
-        flex-direction: column;
-        gap: 15px;
-        align-items: flex-start;
-    }
-    
-    .user-info {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    .header-buttons {
-        width: 100%;
-        justify-content: flex-end;
     }
 }

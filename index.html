@@ -3,96 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旅游助手</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="./iconfont.js"></script>
-    <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=ieTgaCTv1rAb1VggApZB259viQMr2hWG"></script>
-    <script src="script.js"></script>
+    <title>带我玩 - 成都一日游</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/iconfont.js"></script>
+    <script src="https://api.map.baidu.com/api?v=3.0&ak=ieTgaCTv1rAb1VggApZB259viQMr2hWG"></script>
 </head>
 <body>
     <div class="app-container">
-        <!-- 顶部导航栏 -->
-        <header class="header">
-            <div class="header-left">
-                <div class="user-avatar">
-                    <span class="user-score">用户名</span>
+        <!-- ================================================================ -->
+        <!-- 视图 1：开始页                                                      -->
+        <!-- ================================================================ -->
+        <div id="view-start" class="view">
+            <div class="start-container">
+                <div class="start-hero">
+                    <h1 class="start-title">带我玩</h1>
+                    <p class="start-subtitle">成都一日游 · AI 模拟游戏</p>
+                    <p class="start-desc">
+                        你是导游，小爱是你的游客。<br>
+                        通过自然语言对话，带领小爱游览成都，<br>
+                        规划路线、品尝美食、管理体力与心情。<br>
+                        在一天之内（08:00 - 22:00），<br>
+                        让小爱度过最美好的一天吧！
+                    </p>
+                    <button id="btn-start-game" class="btn-primary btn-large">开始游戏</button>
+                </div>
+                <div class="start-records">
+                    <h2 class="section-title">历史战绩</h2>
+                    <div id="records-list" class="records-list">
+                        <p class="loading-text">加载中...</p>
+                    </div>
+                    <div class="records-pagination" id="records-pagination"></div>
                 </div>
             </div>
-            <div class="header-center">
-                <!-- 金币 -->
-                <div class="user-info-item">
-                    <svg class="icon" aria-hidden="true">
-                        <use xlink:href="#icon-jinbi"></use>
-                    </svg>
-                    <span class="item-label">金币</span>
-                    <span class="item-value">1000</span>
-                </div>
-                <!-- 经验 -->
-                <div class="user-info-item">
-                    <svg class="icon" aria-hidden="true">
-                        <use xlink:href="#icon-jingyan"></use>
-                    </svg>
-                    <span class="item-label">经验</span>
-                    <span class="item-value">1000</span>
-                </div>
-                <!-- 心情值 -->
-                <div class="user-info-item">
-                    <svg class="icon" aria-hidden="true">
-                        <use xlink:href="#icon-xinqingzhi_zhengke"></use>
-                    </svg>
-                    <span class="item-label">心情值</span>
-                    <span class="item-value">100</span>
-                </div>
-                <!-- 体力 -->
-                <div class="user-info-item">
-                    <svg class="icon" aria-hidden="true">
-                        <use xlink:href="#icon-yonghu_tili"></use>
-                    </svg>
-                    <span class="item-label">体力</span>
-                    <span class="item-value">100</span>
-                </div>
-                <!-- 饱食度 -->
-                <div class="user-info-item">
-                    <svg class="icon" aria-hidden="true">
-                        <use xlink:href="#icon-hanbao"></use>
-                    </svg>
-                    <span class="item-label">饱食度</span>
-                    <span class="item-value">80</span>
-                </div>
-            </div>
-           
-        </header>
+        </div>
 
-        <!-- 主内容区域 -->
-        <main class="main-content">
-            <!-- 左侧地图区域 -->
-            <div class="left-panel">
-                <div id="map" class="map-panel"></div>
-            </div>
-
-            <!-- 右侧搜索和聊天区域 -->
-            <div class="right-panel">
-                <!-- 地点搜索 -->
-                <div class="search-panel">
-                    <h2 class="panel-title">地点搜索</h2>
-                    <div class="search-input-container">
-                        <input type="text" id="search-input" class="location-input common-input" placeholder="请输入地点">
-                        <button id="search-btn" class="search-button common-button">查找</button>
+        <!-- ================================================================ -->
+        <!-- 视图 2：主游戏界面                                                  -->
+        <!-- ================================================================ -->
+        <div id="view-game" class="view hidden">
+            <!-- 顶部状态栏 -->
+            <header class="header">
+                <div class="header-left">
+                    <span class="location-name" id="stat-location">成都东站</span>
+                </div>
+                <div class="header-center">
+                    <!-- 金币 -->
+                    <div class="stat-item">
+                        <svg class="icon" aria-hidden="true">
+                            <use xlink:href="#icon-jinbi"></use>
+                        </svg>
+                        <span class="stat-label">金币</span>
+                        <span class="stat-value" id="stat-money">1000</span>
+                    </div>
+                    <!-- 时间 -->
+                    <div class="stat-item">
+                        <svg class="icon" aria-hidden="true" viewBox="0 0 1024 1024" width="16" height="16">
+                            <path d="M512 64C264.6 64 64 264.6 64 512s200.6 448 448 448 448-200.6 448-448S759.4 64 512 64zm0 820c-205.4 0-372-166.6-372-372s166.6-372 372-372 372 166.6 372 372-166.6 372-372 372z" fill="currentColor"/>
+                            <path d="M686.7 638.6L544.1 535.5V288c0-17.7-14.3-32-32-32s-32 14.3-32 32v275.4c0 8.2 3.1 16 8.8 21.9l166.6 119.8c14.1 10.2 34.3 7.1 44.5-7 10.3-14.2 7.2-34.3-7-44.5z" fill="currentColor"/>
+                        </svg>
+                        <span class="stat-label">时间</span>
+                        <span class="stat-value" id="stat-time">08:00</span>
+                    </div>
+                    <!-- 心情 -->
+                    <div class="stat-item">
+                        <svg class="icon" aria-hidden="true">
+                            <use xlink:href="#icon-xinqingzhi_zhengke"></use>
+                        </svg>
+                        <span class="stat-label">心情</span>
+                        <span class="stat-value" id="stat-mood">100</span>
+                    </div>
+                    <!-- 体力 -->
+                    <div class="stat-item">
+                        <svg class="icon" aria-hidden="true">
+                            <use xlink:href="#icon-yonghu_tili"></use>
+                        </svg>
+                        <span class="stat-label">体力</span>
+                        <span class="stat-value" id="stat-stamina">100</span>
+                    </div>
+                    <!-- 饱食度 -->
+                    <div class="stat-item">
+                        <svg class="icon" aria-hidden="true">
+                            <use xlink:href="#icon-hanbao"></use>
+                        </svg>
+                        <span class="stat-label">饱食度</span>
+                        <span class="stat-value" id="stat-fullness">80</span>
                     </div>
                 </div>
-                
-                <!-- 聊天界面 -->
-                <div class="chat-panel">
-                    <h2 class="panel-title">带我玩</h2>
-                    <div class="chat-time" id="chat-time">00:00</div>
-                    <div class="chat-messages" id="chat-messages"></div>
-                    <div class="chat-input">
-                        <input type="text" id="message-input" class="common-input" placeholder="输入消息...">
-                        <button class="add-message-btn common-button" id="send-btn">发送</button>
+            </header>
+
+            <!-- 主内容区 -->
+            <main class="main-content">
+                <!-- 左侧：地图 -->
+                <div class="left-panel">
+                    <div id="map-container" class="map-panel"></div>
+                </div>
+
+                <!-- 右侧：搜索 + 聊天 -->
+                <div class="right-panel">
+                    <!-- POI 搜索面板 -->
+                    <div class="search-panel" id="search-panel">
+                        <div class="search-header">
+                            <h2 class="panel-title">地点搜索</h2>
+                            <div id="transport-btns" class="transport-btns hidden">
+                                <button class="transport-btn" data-mode="walking">步行</button>
+                                <button class="transport-btn" data-mode="bicycling">骑行</button>
+                                <button class="transport-btn" data-mode="driving">驾车</button>
+                                <button class="transport-btn" data-mode="transit">公交</button>
+                            </div>
+                        </div>
+                        <div class="search-input-container">
+                            <input type="text" id="search-input" class="common-input" placeholder="搜索成都的景点、美食...">
+                            <button id="search-btn" class="common-button">查找</button>
+                        </div>
+                        <div id="search-results" class="search-results hidden"></div>
+                    </div>
+
+                    <!-- POI 详情与路线 -->
+                    <div id="poi-detail-card" class="poi-detail-card hidden">
+                        <div class="poi-detail-header">
+                            <span id="poi-detail-name"></span>
+                            <button id="poi-detail-close" class="btn-close">&times;</button>
+                        </div>
+                        <div class="poi-detail-body">
+                            <p>类型：<span id="poi-detail-type"></span></p>
+                            <p>距离：<span id="poi-detail-distance"></span></p>
+                        </div>
+                        <button id="poi-route-btn" class="btn-primary btn-small">去这里</button>
+                    </div>
+
+                    <!-- 路线选择弹窗 -->
+                    <div id="route-modal" class="route-modal hidden">
+                        <div class="route-modal-content">
+                            <h3 id="route-title">选择出行方式</h3>
+                            <div id="route-options" class="route-options"></div>
+                            <button id="route-close" class="btn-secondary">取消</button>
+                        </div>
+                    </div>
+
+                    <!-- 聊天面板 -->
+                    <div class="chat-panel">
+                        <h2 class="panel-title">对话小爱</h2>
+                        <div class="chat-messages" id="chat-messages">
+                            <p class="chat-hint" id="chat-hint">开始和小爱对话吧~</p>
+                        </div>
+                        <div class="chat-input">
+                            <input type="text" id="message-input" class="common-input" placeholder="输入消息..." disabled>
+                            <button id="send-btn" class="common-button" disabled>发送</button>
+                        </div>
                     </div>
                 </div>
+            </main>
+        </div>
+
+        <!-- ================================================================ -->
+        <!-- 视图 3：结算页                                                      -->
+        <!-- ================================================================ -->
+        <div id="view-settle" class="view hidden">
+            <div class="settle-container">
+                <h1 class="settle-title">游戏结束</h1>
+                <div class="settle-score-card">
+                    <div class="settle-score" id="settle-score">0</div>
+                    <div class="settle-score-label">最终评分</div>
+                </div>
+                <p class="settle-evaluation" id="settle-evaluation"></p>
+                <div class="settle-route">
+                    <h3>路线回顾</h3>
+                    <ol id="settle-route-list" class="route-list"></ol>
+                </div>
+                <button id="btn-back-home" class="btn-primary btn-large">返回首页</button>
             </div>
-        </main>
+        </div>
     </div>
+
+    <script src="/static/script.js"></script>
 </body>
 </html>

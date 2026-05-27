@@ -1,4 +1,32 @@
+from abc import ABC, abstractmethod
 import math
+
+
+class Tool(ABC):
+    """
+    LLM Function Calling 工具基类
+    """
+
+    name: str
+    description: str
+    parameters: dict
+
+    @property
+    def schema(self) -> dict:
+        """返回 OpenAI 兼容的 function schema"""
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": self.parameters
+            }
+        }
+
+    @abstractmethod
+    def execute(self, arguments: dict) -> str:
+        """执行工具，返回结果"""
+        ...
 
 def haversine_distance(lng1, lat1, lng2, lat2):
     """计算两点间直线距离（km）"""

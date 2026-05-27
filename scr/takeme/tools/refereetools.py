@@ -47,12 +47,27 @@ class Referee:
             logs.append(f"心情 {'+' if delta>0 else ''}{delta}")
             applied["mood"] = state.mood
 
+        # 饱食度变动
+        if "fullness_delta" in updates and updates["fullness_delta"] != 0:
+            delta = int(updates["fullness_delta"])
+            state.update_fullness(delta)
+            logs.append(f"饱食度 {'+' if delta>0 else ''}{delta}")
+            applied["fullness"] = state.fullness
+
         # 时间推进
         if "time_advance_min" in updates and updates["time_advance_min"] > 0:
             mins = int(updates["time_advance_min"])
             state.advance_time(mins)
             logs.append(f"时间推进 {mins} 分钟")
             applied["time"] = state.game_time
+
+        # 位置移动
+        if "target_location_name" in updates and updates["target_location_name"]:
+            target_lng = updates.get("target_lng", state.lng)
+            target_lat = updates.get("target_lat", state.lat)
+            state.move_to(float(target_lng), float(target_lat), updates["target_location_name"])
+            logs.append(f"移动到 {updates['target_location_name']}")
+            applied["location"] = {"name": updates["target_location_name"], "lng": target_lng, "lat": target_lat}
 
         system_msg = updates.get("reason", "状态自动更新") + "。" + "；".join(logs) if logs else updates.get("reason", "")
         return {

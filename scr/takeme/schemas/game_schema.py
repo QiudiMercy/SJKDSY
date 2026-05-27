@@ -6,6 +6,7 @@ class InitState(BaseModel):
     money: int
     stamina: int
     mood: int
+    fullness: int
     location: dict
 
 class GameStartResponse(BaseModel):
@@ -17,6 +18,7 @@ class GameStateResponse(BaseModel):
     money: int
     stamina: int
     mood: int
+    fullness: int
     location: dict
     is_game_over: bool
 

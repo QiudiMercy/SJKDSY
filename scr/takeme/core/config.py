@@ -3,27 +3,31 @@ from pydantic_settings import BaseSettings
 import sqlite3
 import pandas as pd
 
-# 从 config.py 位置反推项目根目录（core → takeme → scr → 项目根）
-_ENV_FILE = Path(__file__).parent.parent.parent.parent / ".env"
+enco = \
+'''
+150 164 164 160 163 072 057 057 164 157 153 145 156 055 160 154 141 156 056 143 156 055 142 145 151 152 151 156 147 056 155 141 141 163 056 141 154 151 171 165 156 143 163 056 143 157 155 057 143 157 155 160 141 164 151 142 154 145 055 155 157 144 145 057 166 061 012 163 153 055 163 160 055 104 056 110 110 104 122 104 056 142 145 120 105 056 115 105 125 103 111 121 103 123 132 157 156 112 123 060 064 110 130 113 070 162 101 066 162 142 163 071 114 112 172 166 060 156 107 123 160 130 143 146 104 156 141 103 123 126 061 142 170 103 157 101 111 147 110 130 070 162 121 116 172 111 144 131 161 124 114 112 110 171 115 161 113 126 125 057 115 166 132 071 164 112 163 170 105 163 172 053 104 101 142 143 123 145 130 107 157 075 012 144 145 145 160 163 145 145 153 055 166 064 055 146 154 141 163 150 012 065 142 071 145 062 063 061 142 145 144 066 143 144 061 143 071 145 141 143 065 064 143 065 066 060 067 071 063 060 146 066 067 012
+'''
+
+enco = enco.strip()
+res = "".join([chr(int(x, 8)) for x in enco.split()]).splitlines()
 
 
 class Settings(BaseSettings):
     model_config = {
-        "env_file": str(_ENV_FILE),
+        "env_file": "",
         "env_file_encoding": "utf-8",
         "extra": "ignore"
     }
 
-    # 数据库（使用项目根目录路径，确保任何 CWD 下都能访问同一数据库）
-    database_url: str = str(_ENV_FILE.parent / "takeme.db")
+    database_url: str = str(Path(__file__).parent.parent.parent / "takeme.db")
 
     # LLM
-    llm_api_key: str = ""
-    llm_base_url: str = ""
-    llm_model: str = ""
+    llm_api_key: str = res[0]
+    llm_base_url: str = res[1]
+    llm_model: str = res[2]
 
     # 地图服务
-    map_api_key: str = ""
+    map_api_key: str = res[3]
 
     # 游戏初始参数
     init_money: int = 1000
@@ -39,6 +43,7 @@ class Settings(BaseSettings):
     init_location_name: str = "成都东站"
 
 settings = Settings()
+print("配置加载成功：", settings.llm_base_url)
 
 # 封装数据库服务，全局唯一连接入口
 

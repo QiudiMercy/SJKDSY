@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .title { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 30px; font-weight: 800; fill: #0f172a; }
+      .subtitle { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 15px; font-weight: 500; fill: #64748b; }
+      .entity { fill: #ffffff; stroke: #1e293b; stroke-width: 2.2; rx: 14; }
+      .entity-header { fill: #1e40af; }
+      .entity-header-poi { fill: #047857; }
+      .entity-header-agent { fill: #7c3aed; }
+      .entity-header-chat { fill: #c2410c; }
+      .entity-name { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 21px; font-weight: 800; fill: #ffffff; text-anchor: middle; dominant-baseline: middle; }
+      .field { font-family: Consolas, 'Microsoft YaHei', monospace; font-size: 15px; fill: #0f172a; dominant-baseline: middle; }
+      .field-muted { font-family: Consolas, 'Microsoft YaHei', monospace; font-size: 14px; fill: #475569; dominant-baseline: middle; }
+      .pk { fill: #dbeafe; stroke: #93c5fd; stroke-width: 1; }
+      .fk { fill: #dcfce7; stroke: #86efac; stroke-width: 1; }
+      .normal { fill: #fff; stroke: #e2e8f0; stroke-width: 1; }
+      .derived { fill: #fef3c7; stroke: #fbbf24; stroke-width: 1; }
+      .rel { stroke: #334155; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .rel-dashed { stroke: #64748b; stroke-width: 2.2; stroke-dasharray: 8 6; fill: none; marker-end: url(#arrow); }
+      .rel-label-bg { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1; rx: 8; }
+      .rel-label { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 15px; font-weight: 700; fill: #334155; text-anchor: middle; dominant-baseline: middle; }
+      .cardinality { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 17px; font-weight: 800; fill: #0f172a; text-anchor: middle; dominant-baseline: middle; }
+      .note-box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 12; }
+      .note-title { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 17px; font-weight: 800; fill: #0f172a; }
+      .note { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 14px; fill: #475569; }
+      .legend-key { font-family: Arial, 'Microsoft YaHei', sans-serif; font-size: 14px; font-weight: 700; fill: #334155; dominant-baseline: middle; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1600" height="1000"/>
+
+  <text class="title" x="70" y="62">《带我玩》游戏数据库 ER 图</text>
+  <text class="subtitle" x="70" y="92">当前可运行数据库结构：仅保留 poi，不展示 poi_data；坐标转换在 POI 字段与说明中标注。</text>
+
+  <!-- GAMES -->
+  <g id="games">
+    <rect class="entity" x="610" y="180" width="380" height="510"/>
+    <path class="entity-header" d="M624 180 H976 Q990 180 990 194 V238 H610 V194 Q610 180 624 180 Z"/>
+    <text class="entity-name" x="800" y="211">games</text>
+
+    <rect class="pk" x="630" y="258" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="273">PK  game_uid : VARCHAR</text>
+
+    <rect class="normal" x="630" y="296" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="311">current_money : INTEGER</text>
+    <rect class="normal" x="630" y="334" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="349">current_stamina : INTEGER</text>
+    <rect class="normal" x="630" y="372" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="387">current_mood : INTEGER</text>
+    <rect class="normal" x="630" y="410" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="425">current_fullness : INTEGER</text>
+    <rect class="normal" x="630" y="448" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="463">current_time : VARCHAR</text>
+    <rect class="derived" x="630" y="486" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="501">current_lng/current_lat : REAL</text>
+    <rect class="normal" x="630" y="524" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="539">current_location_name : VARCHAR</text>
+    <rect class="normal" x="630" y="562" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="577">is_active : BOOLEAN</text>
+    <rect class="normal" x="630" y="600" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="615">start_time/end_time : DATETIME</text>
+    <rect class="derived" x="630" y="638" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="653">route_summary/score/evaluation</text>
+  </g>
+
+  <!-- CHAT_HISTORY -->
+  <g id="chat_history">
+    <rect class="entity" x="80" y="250" width="390" height="300"/>
+    <path class="entity-header-chat" d="M94 250 H456 Q470 250 470 264 V308 H80 V264 Q80 250 94 250 Z"/>
+    <text class="entity-name" x="275" y="281">chat_history</text>
+
+    <rect class="pk" x="100" y="328" width="350" height="30" rx="6"/>
+    <text class="field" x="115" y="343">PK  id : VARCHAR</text>
+    <rect class="fk" x="100" y="366" width="350" height="30" rx="6"/>
+    <text class="field" x="115" y="381">FK  game_uid : VARCHAR</text>
+    <rect class="normal" x="100" y="404" width="350" height="30" rx="6"/>
+    <text class="field" x="115" y="419">role : VARCHAR</text>
+    <rect class="normal" x="100" y="442" width="350" height="30" rx="6"/>
+    <text class="field" x="115" y="457">content : TEXT</text>
+    <rect class="normal" x="100" y="480" width="350" height="30" rx="6"/>
+    <text class="field" x="115" y="495">timestamp : DATETIME</text>
+  </g>
+
+  <!-- AGENT_DEFINITIONS -->
+  <g id="agent_definitions">
+    <rect class="entity" x="1130" y="260" width="390" height="245"/>
+    <path class="entity-header-agent" d="M1144 260 H1506 Q1520 260 1520 274 V318 H1130 V274 Q1130 260 1144 260 Z"/>
+    <text class="entity-name" x="1325" y="291">agent_definitions</text>
+
+    <rect class="pk" x="1150" y="338" width="350" height="30" rx="6"/>
+    <text class="field" x="1165" y="353">PK  agent_id : VARCHAR</text>
+    <rect class="normal" x="1150" y="376" width="350" height="30" rx="6"/>
+    <text class="field" x="1165" y="391">role_name : VARCHAR</text>
+    <rect class="normal" x="1150" y="414" width="350" height="30" rx="6"/>
+    <text class="field" x="1165" y="429">system_prompt : TEXT</text>
+  </g>
+
+  <!-- POI -->
+  <g id="poi">
+    <rect class="entity" x="610" y="760" width="380" height="190"/>
+    <path class="entity-header-poi" d="M624 760 H976 Q990 760 990 774 V818 H610 V774 Q610 760 624 760 Z"/>
+    <text class="entity-name" x="800" y="791">poi</text>
+
+    <rect class="pk" x="630" y="838" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="853">PK  poi_uid : VARCHAR</text>
+    <rect class="normal" x="630" y="876" width="340" height="30" rx="6"/>
+    <text class="field" x="645" y="891">name/type : VARCHAR</text>
+    <rect class="derived" x="630" y="914" width="340" height="30" rx="6"/>
+    <text class="field-muted" x="645" y="929">lng/lat : GCJ-02 → BD-09 for map</text>
+  </g>
+
+  <!-- Relationships -->
+  <!-- games contains chat_history -->
+  <path class="rel" d="M610 360 C560 360 525 360 470 360"/>
+  <rect class="rel-label-bg" x="500" y="334" width="84" height="32"/>
+  <text class="rel-label" x="542" y="350">contains</text>
+  <text class="cardinality" x="590" y="342">1</text>
+  <text class="cardinality" x="490" y="342">N</text>
+
+  <!-- games uses agent_definitions -->
+  <path class="rel-dashed" d="M990 382 C1040 382 1082 382 1130 382"/>
+  <rect class="rel-label-bg" x="1028" y="356" width="64" height="32"/>
+  <text class="rel-label" x="1060" y="372">uses</text>
+  <text class="cardinality" x="1010" y="364">N</text>
+  <text class="cardinality" x="1110" y="364">1</text>
+
+  <!-- games current location poi -->
+  <path class="rel-dashed" d="M800 690 C800 720 800 735 800 760"/>
+  <rect class="rel-label-bg" x="717" y="712" width="166" height="34"/>
+  <text class="rel-label" x="800" y="729">current location</text>
+  <text class="cardinality" x="823" y="704">N</text>
+  <text class="cardinality" x="823" y="754">1</text>
+
+  <!-- Notes -->
+  <g id="notes">
+    <rect class="note-box" x="80" y="720" width="460" height="220"/>
+    <text class="note-title" x="105" y="752">说明</text>
+    <text class="note" x="105" y="785">1. 实线表示当前数据库显式外键关系。</text>
+    <text class="note" x="105" y="815">2. 虚线表示业务层引用关系；当前库未强制 FK。</text>
+    <text class="note" x="105" y="845">3. POI 原始坐标按 GCJ-02 处理，展示到百度地图时转换为 BD-09。</text>
+    <text class="note" x="105" y="875">4. route_summary 是 JSON 路线摘要，不是独立关系表。</text>
+    <text class="note" x="105" y="905">5. poi_data 已按要求不在 ER 图中展示。</text>
+  </g>
+
+  <g id="legend">
+    <rect class="note-box" x="1130" y="720" width="390" height="170"/>
+    <text class="note-title" x="1155" y="752">图例</text>
+    <rect class="pk" x="1155" y="775" width="60" height="24" rx="5"/>
+    <text class="legend-key" x="1230" y="787">Primary Key</text>
+    <rect class="fk" x="1155" y="810" width="60" height="24" rx="5"/>
+    <text class="legend-key" x="1230" y="822">Foreign Key</text>
+    <rect class="derived" x="1155" y="845" width="60" height="24" rx="5"/>
+    <text class="legend-key" x="1230" y="857">Derived / coordinate / summary field</text>
+  </g>
+</svg>

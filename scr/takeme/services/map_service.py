@@ -1,6 +1,6 @@
 from core.config import settings, dbmanager
 from tools.tool import haversine_distance
-from tools.coord_convert import wgs84_to_bd09
+from tools.coord_convert import gcj02_to_bd09
 import pandas as pd
 
 class MapService:
@@ -80,7 +80,9 @@ class MapService:
         pois = []
         for _, row in poi_df.iterrows():
             dist = haversine_distance(lng, lat, row["lng"], row["lat"]) if lng and lat else 0
-            bd_lng, bd_lat = wgs84_to_bd09(row["lng"], row["lat"])
+            # POI 数据通常来自国内地图服务，坐标系为 GCJ-02；百度地图底图使用 BD-09。
+            # 这里只做 GCJ-02 -> BD-09，避免错误地按 WGS-84 二次偏移。
+            bd_lng, bd_lat = gcj02_to_bd09(row["lng"], row["lat"])
             pois.append({
                 "poi_uid": row["poi_uid"],
                 "name": row["name"],

@@ -1,6 +1,6 @@
 from typing import Optional, List
 from tools.tool import Tool, haversine_distance
-from tools.coord_convert import wgs84_to_bd09
+from tools.coord_convert import gcj02_to_bd09
 from core.config import dbmanager
 import pandas as pd
 
@@ -70,14 +70,17 @@ class SearchPOITool(Tool):
     def name(self): return "search_poi"
 
     @property
-    def description(self): return "搜索成都的 POI 地点，可指定关键词或获取附近推荐"
+    def description(self): return "搜索成都 POI 地点。调用前应根据用户上下文自行提炼核心地点名、商圈名、景点名或类别词，不要把完整口语句子直接作为关键词。"
 
     @property
     def parameters(self):
         return {
             "type": "object",
             "properties": {
-                "keyword": {"type": "string", "description": "搜索关键词，如'火锅'、'公园'"}
+                "keyword": {
+                    "type": "string",
+                    "description": "由 AI 根据上下文提炼出的核心搜索词，例如用户说'我们去人民公园相亲角看看'时传'人民公园'或'相亲角'；用户说'附近有没有火锅'时传'火锅'。留空表示获取附近推荐。"
+                }
             },
             "required": []
         }
@@ -87,92 +90,110 @@ class SearchPOITool(Tool):
         self.current_lng = current_lng
         self.current_lat = current_lat
 
-    def _query_poi_with_bbox(self, kw: str) -> pd.DataFrame:
+    def _query_poi(self, where_clause: str, params: tuple, limit: int = 500) -> pd.DataFrame:
         """
-        利用经纬度范围圈定（BBox）过滤并返回模糊检索候选集
+        查询 POI 候选集。距离排序在 Python 中统一完成，避免 SQL 的 LIMIT 先截断导致返回远处结果。
         """
-        if self.current_lng and self.current_lat:
-            df = self.db.get_df(
-                """
-                SELECT poi_uid, name, type, lng, lat FROM poi 
-                WHERE name LIKE ? 
-                  AND lng BETWEEN ? AND ? 
-                  AND lat BETWEEN ? AND ? 
-                LIMIT 500
-                """,
-                (f"%{kw}%", self.current_lng - 0.15, self.current_lng + 0.15, self.current_lat - 0.15, self.current_lat + 0.15)
-            )
-            # 容错：如果 BBox 没搜够，退化回全局模糊检索
-            if len(df) < 5:
-                df = self.db.get_df(
-                    "SELECT poi_uid, name, type, lng, lat FROM poi WHERE name LIKE ? LIMIT 500",
-                    (f"%{kw}%",)
-                )
-            return df
-        else:
-            return self.db.get_df(
-                "SELECT poi_uid, name, type, lng, lat FROM poi WHERE name LIKE ? LIMIT 500",
-                (f"%{kw}%",)
-            )
+        return self.db.get_df(
+            f"SELECT poi_uid, name, type, lng, lat FROM poi WHERE {where_clause} LIMIT {limit}",
+            params
+        )
+
+    def _build_fuzzy_keywords(self, keyword: str) -> list[str]:
+        """
+        构造模糊搜索关键词：完整关键词、前缀关键词、连续 2 字/3 字片段。
+        """
+        kw = keyword.strip()
+        fuzzy_keywords = set()
+        if len(kw) > 2:
+            fuzzy_keywords.add(kw[:2])
+        if len(kw) > 3:
+            fuzzy_keywords.add(kw[:3])
+        for size in (2, 3):
+            if len(kw) >= size:
+                for i in range(0, len(kw) - size + 1):
+                    fuzzy_keywords.add(kw[i:i + size])
+        fuzzy_keywords.discard(kw)
+        return [item for item in fuzzy_keywords if item.strip()]
+
+    def _merge_poi_rows(self, rows: pd.DataFrame, match_type: str, result_map: dict) -> None:
+        """
+        合并精确匹配和模糊匹配结果。同一个 POI 同时命中时，保留更高优先级的匹配类型。
+        """
+        priority = {"exact": 0, "fuzzy": 1, "nearby": 2}
+        for _, row in rows.iterrows():
+            poi_uid = row["poi_uid"]
+            if poi_uid not in result_map or priority[match_type] < priority[result_map[poi_uid]["match_type"]]:
+                result_map[poi_uid] = {
+                    "poi_uid": poi_uid,
+                    "name": row["name"],
+                    "type": row["type"],
+                    "lng": row["lng"],
+                    "lat": row["lat"],
+                    "match_type": match_type
+                }
 
     def execute(self, arguments: dict) -> dict:
         keyword = arguments.get("keyword", "")
+        result_map = {}
         
-        # 原生 SQL 查询 'poi' 表 (引入 BBox 筛选与 500 条限制提升准确度)
         if keyword:
-            clean_keyword = keyword.strip()
-            # 提炼核心名词：过滤口语、动词以及特定地点后缀
-            for suffix in ["相亲角", "相亲", "那里", "这儿", "附近", "玩玩", "逛逛", "看看", "店", "门", "去", "吃", "喝", "玩"]:
-                clean_keyword = clean_keyword.replace(suffix, "")
-            clean_keyword = clean_keyword.strip()
-            if not clean_keyword:
-                clean_keyword = keyword
+            search_keyword = keyword.strip()
 
-            # 1. 尝试清洗后的完整关键词查询
-            poi_df = self._query_poi_with_bbox(clean_keyword)
-            
-            # 2. 备用降级：如果无结果且词长 > 4，截取前 4 字（如 "人民公园相亲角" 自动降级为 "人民公园"）
-            if poi_df.empty and len(clean_keyword) > 4:
-                poi_df = self._query_poi_with_bbox(clean_keyword[:4])
-                
-            # 3. 极速退化：如果依然无结果且词长 > 2，截取前 2 字（如 "宽窄巷子东门" -> "宽窄"）
-            if poi_df.empty and len(clean_keyword) > 2:
-                poi_df = self._query_poi_with_bbox(clean_keyword[:2])
+            # 1. 精准匹配：地点名称完整包含关键词，或类型完整包含关键词。
+            # 关键词由 AI 根据上下文提炼，工具不再硬编码删除语气词/地点后缀。
+            exact_df = self._query_poi(
+                "name LIKE ? OR type LIKE ?",
+                (f"%{search_keyword}%", f"%{search_keyword}%"),
+                limit=2000
+            )
+            self._merge_poi_rows(exact_df, "exact", result_map)
+
+            # 2. 模糊匹配：使用 AI 提炼后的关键词生成短片段，提升召回。
+            fuzzy_keywords = self._build_fuzzy_keywords(search_keyword)
+            if fuzzy_keywords:
+                fuzzy_clauses = " OR ".join(["name LIKE ? OR type LIKE ?" for _ in fuzzy_keywords])
+                fuzzy_params = tuple(param for item in fuzzy_keywords for param in (f"%{item}%", f"%{item}%"))
+                fuzzy_df = self._query_poi(fuzzy_clauses, fuzzy_params, limit=3000)
+                self._merge_poi_rows(fuzzy_df, "fuzzy", result_map)
         else:
-            # 附近推荐：基于 BBox 筛选附近的点位
+            # 附近推荐：扩大候选范围后统一按距离排序，避免数据库返回顺序影响推荐质量
             if self.current_lng and self.current_lat:
-                poi_df = self.db.get_df(
+                nearby_df = self.db.get_df(
                     """
                     SELECT poi_uid, name, type, lng, lat FROM poi 
                     WHERE lng BETWEEN ? AND ? 
                       AND lat BETWEEN ? AND ? 
-                    LIMIT 200
+                    LIMIT 2000
                     """,
-                    (self.current_lng - 0.08, self.current_lng + 0.08, self.current_lat - 0.08, self.current_lat + 0.08)
+                    (self.current_lng - 0.15, self.current_lng + 0.15, self.current_lat - 0.15, self.current_lat + 0.15)
                 )
             else:
-                poi_df = self.db.get_df(
+                nearby_df = self.db.get_df(
                     "SELECT poi_uid, name, type, lng, lat FROM poi LIMIT 100"
                 )
+            self._merge_poi_rows(nearby_df, "nearby", result_map)
             
         pois = []
-        for _, row in poi_df.iterrows():
+        for row in result_map.values():
             dist = haversine_distance(self.current_lng, self.current_lat, row["lng"], row["lat"]) if self.current_lng and self.current_lat else 0
-            bd_lng, bd_lat = wgs84_to_bd09(row["lng"], row["lat"])
+            # POI 数据通常来自国内地图服务，坐标系为 GCJ-02；百度地图底图使用 BD-09。
+            # 这里只做 GCJ-02 -> BD-09，避免错误地按 WGS-84 二次偏移。
+            bd_lng, bd_lat = gcj02_to_bd09(row["lng"], row["lat"])
             pois.append({
                 "poi_uid": row["poi_uid"],
                 "name": row["name"],
                 "type": row["type"],
                 "lng": bd_lng,
                 "lat": bd_lat,
-                "distance": dist
+                "distance": dist,
+                "match_type": row["match_type"]
             })
             
-        # 如果是附近推荐，按距离排序取前10名
+        # 始终按距离由近到远返回；无当前位置时保持查询顺序
         if self.current_lng and self.current_lat:
             pois.sort(key=lambda x: x["distance"])
             
-        # 格式化距离字符串并截断
         formatted_pois = []
         for p in pois[:10]:
             formatted_pois.append({
@@ -181,7 +202,8 @@ class SearchPOITool(Tool):
                 "type": p["type"],
                 "lng": p["lng"],
                 "lat": p["lat"],
-                "distance": f"{p['distance']:.1f}km"
+                "distance": f"{p['distance']:.1f}km",
+                "match_type": p["match_type"]
             })
             
         return {"poi_list": formatted_pois}
@@ -221,7 +243,8 @@ class PlanRouteTool(Tool):
             
         row = poi_df.iloc[0]
         dist = haversine_distance(self.current_lng, self.current_lat, row["lng"], row["lat"])
-        bd_lng, bd_lat = wgs84_to_bd09(row["lng"], row["lat"])
+        # POI 数据通常来自国内地图服务，坐标系为 GCJ-02；百度地图底图使用 BD-09。
+        bd_lng, bd_lat = gcj02_to_bd09(row["lng"], row["lat"])
         
         return {
             "target_name": row["name"],

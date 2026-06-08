@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     database_url: str = str(Path(__file__).parent.parent.parent / "takeme.db")
 
     # LLM
-    llm_api_key: str = res[0]
-    llm_base_url: str = res[1]
+    llm_api_key: str = res[1]
+    llm_base_url: str = res[0]
     llm_model: str = res[2]
 
     # 地图服务

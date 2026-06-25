@@ -27,22 +27,17 @@ class ChatService:
         # 初始化小爱智能体
         agent = XiaoAiAgent(dbmanager=self.db)
         
-        # 1. 调用小爱智能体，生成自然语言对话回复并持久化
         segments = agent.process_msg(content, game_uid)
 
-        # 2. 紧接着调用系统裁判智能体，实时评估对话并进行数值裁决、地理坐标迁移
         from agent.refereeagent import RefereeAgent
         referee = RefereeAgent(gamestate=state, dbmanager=self.db)
         referee_results = referee.process_msg(game_uid)
 
-        # 仅获取当前回合由裁判新产生的系统通知，若无则为空，防止重复显示上一回合的通知气泡
         system_reply = referee_results[0] if referee_results else ""
 
-        # 服务端统一将底层 WGS-84 坐标转换为百度 BD-09 坐标提供给前端地图渲染
         from tools.coord_convert import wgs84_to_bd09
         bd_lng, bd_lat = wgs84_to_bd09(state.lng, state.lat)
 
-        # 获取最新的游戏状态快照，用于前端同步状态栏
         new_status = {
             "time": state.current_time,
             "money": state.money,

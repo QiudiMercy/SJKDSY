@@ -4,7 +4,7 @@ from core.config import settings, dbmanager, DBManager
 
 class GameState:
     """
-    一局游戏的参数和状态管理 (完全基于原生 SQL 读写)
+    一局游戏的参数和状态管理
     """
 
     def __init__(
@@ -15,7 +15,7 @@ class GameState:
         self._game_uid = game_uid
         self.db = db
         
-        # 尝试从数据库加载已存在的游戏数据
+        # 从数据库加载已有游戏
         game_df = self.db.get_df("SELECT * FROM games WHERE game_uid = ?", (self._game_uid,))
         if not game_df.empty:
             row = game_df.iloc[0]
@@ -60,7 +60,7 @@ class GameState:
 
     def _write_game_data(self):
         """
-        写入游戏数据到数据库 (原生参数化 SQL，解决拼接报错)
+        写入游戏数据到数据库
         """
         self.db.execute(
             """
@@ -180,7 +180,7 @@ class GameState:
     def current_time(self, value: str):
         val_str = str(value)
         if ":" in val_str:
-            # 绝对时间设置 (如 "14:30")
+            # 绝对时间设置
             self._current_time = val_str
             try:
                 curr_dt = datetime.strptime(self._current_time, "%H:%M")
@@ -190,7 +190,7 @@ class GameState:
             except Exception:
                 pass
         else:
-            # 相对分钟推进 (如 "30" 或 30)
+            # 相对分钟推进
             try:
                 mins = int(value)
                 final_time = datetime.strptime(self._current_time, "%H:%M") + timedelta(minutes=mins)
@@ -243,7 +243,7 @@ class GameState:
             (0, end_time_str, self._game_uid)
         )
 
-    # ---------- 裁判/Service 专用增量修改方法 (提供完美双重兼容) ----------
+    # ---------- 增量修改方法 ----------
     def update_money(self, delta: int):
         self.money = self.money + delta
 
@@ -291,6 +291,6 @@ class GameState:
 
     def save(self):
         """
-        空存根方法，防止旧 Service 调用报错 (手写 SQL 在 Setter 中即时持久化)
+        空存根方法，防止旧 Service 调用报错
         """
         pass

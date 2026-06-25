@@ -47,7 +47,6 @@ class ChatMessage:
         """
         参数化写入一条消息到数据库，彻底防范 SQL 报错与注入
         """
-        # 兼容 role，比如把 assistant 转回 xiaoai (如果是大模型交互需要的 role)
         role = message.role
         if role == "assistant":
             role = "xiaoai"

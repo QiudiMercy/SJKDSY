@@ -1,4 +1,4 @@
-"""WGS-84 → BD-09 坐标转换（百度地图专用）"""
+"""WGS-84 → BD-09 坐标转换"""
 import math
 
 _PI = math.pi

@@ -9,10 +9,10 @@ let gameUid = null;
 let gameState = null;
 let map = null;
 let currentMarkers = [];
-let selectedPoi = null;       // 当前选中要去的 POI
-let isChatBusy = false;       // 正在等待 AI 回复中
+let selectedPoi = null;
+let isChatBusy = false;
 let recordsPage = 1;
-let lastActivityTime = null;  // 上次活动时间 (real milliseconds)
+let lastActivityTime = null;
 let gameTimerInterval = null; // 计时器句柄
 
 // =============================================================================
@@ -47,7 +47,6 @@ async function apiPost(path, body = {}) {
 
 /** 格式化距离显示 — 后端返回的是 km 数值或 "X.Xkm" 字符串 */
 function formatDistance(raw) {
-    // 提取数值（处理 "1.5km"、"0.3" 等格式）
     const num = parseFloat(String(raw).replace(/[^0-9.]/g, ''));
     if (isNaN(num)) return String(raw);
     if (num < 1) return Math.round(num * 1000) + 'm';
@@ -75,7 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.getElementById('route-close').addEventListener('click', hideRouteModal);
 
-    // 点击搜索结果以外的地方自动收起
     document.addEventListener('click', (e) => {
         const resultsEl = document.getElementById('search-results');
         const searchPanel = document.getElementById('search-panel');
@@ -84,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 交通方式按钮
     document.querySelectorAll('.transport-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const mode = btn.dataset.mode;
@@ -220,7 +217,6 @@ function updateStatusBar(state) {
         }
     });
 
-    // 更新时间颜色（接近 22:00 变红）
     const timeEl = document.getElementById('stat-time');
     if (timeEl && state.time) {
         const parts = state.time.split(':');
@@ -238,14 +234,12 @@ function initMap(lng, lat) {
     const container = document.getElementById('map-container');
     if (!container) return;
 
-    // 如果已经初始化过，先清理
     if (map) {
         map.clearOverlays();
         currentMarkers = [];
     }
 
-    // 默认成都中心
-    const centerLng = lng || 104.0668;
+    var centerLng = lng || 104.0668;
     const centerLat = lat || 30.6598;
 
     map = new BMap.Map('map-container');
@@ -255,7 +249,6 @@ function initMap(lng, lat) {
     map.addControl(new BMap.ScaleControl());
     map.enableScrollWheelZoom(true);
 
-    // 在当前位置添加标记
     if (lng && lat) {
         addMarker(lng, lat, gameState ? (gameState.location ? gameState.location.name : '当前位置') : '当前位置', true);
     }
@@ -267,7 +260,6 @@ function addMarker(lng, lat, title, isCenter = false) {
 
     let icon;
     if (isCenter) {
-        // 当前位置：大号蓝色圆点
         icon = new BMap.Icon(
             'data:image/svg+xml,' + encodeURIComponent(
               '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">' +
@@ -278,7 +270,6 @@ function addMarker(lng, lat, title, isCenter = false) {
             { anchor: new BMap.Size(12, 12) }
         );
     } else {
-        // POI 标记：橙色水滴
         icon = new BMap.Icon(
             'data:image/svg+xml,' + encodeURIComponent(
               '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="28" viewBox="0 0 20 28">' +
@@ -294,7 +285,6 @@ function addMarker(lng, lat, title, isCenter = false) {
     map.addOverlay(marker);
     currentMarkers.push(marker);
 
-    // 给标记添加文字标签
     const label = new BMap.Label(title, {
         offset: new BMap.Size(isCenter ? 16 : 12, isCenter ? -30 : -36),
         position: point
@@ -310,9 +300,8 @@ function addMarker(lng, lat, title, isCenter = false) {
         fontWeight: 'bold'
     });
     map.addOverlay(label);
-    currentMarkers.push(label);  // 一并管理，clearMarkers 时清除
+    currentMarkers.push(label);
 
-    // 点击弹出信息窗
     const infoWindow = new BMap.InfoWindow(title, { width: 120, height: 40 });
     marker.addEventListener('click', () => {
         marker.openInfoWindow(infoWindow);
@@ -350,7 +339,6 @@ async function sendMessage(textOverride) {
     const content = textOverride || inputEl.value.trim();
     if (!content || isChatBusy || !gameUid) return;
 
-    // 计算已流逝的游戏时间 (1 真实秒 = 84 游戏秒)
     const now = Date.now();
     let timePassedMin = 0;
     if (lastActivityTime) {
@@ -361,7 +349,6 @@ async function sendMessage(textOverride) {
     addUserMessage(content);
     if (!textOverride) inputEl.value = '';
 
-    // 显示 AI 正在输入
     const typingBubble = addTypingIndicator();
     setChatEnabled(false);
     isChatBusy = true;
@@ -381,7 +368,6 @@ async function sendMessage(textOverride) {
             return;
         }
 
-        // 移除"正在输入"
         removeElement(typingBubble);
 
         const reader = response.body.getReader();
@@ -393,7 +379,6 @@ async function sendMessage(textOverride) {
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
 
-            // 解析完整的 SSE 事件（以 \n\n 分隔）
             const events = buffer.split('\n\n');
             buffer = events.pop(); // 剩余不完整的事件留在 buffer
 
@@ -403,16 +388,13 @@ async function sendMessage(textOverride) {
                 if (!parsed) continue;
 
                 if (parsed.event === 'message') {
-                    // 每一个分段独立展示一条消息框
                     const segmentText = parsed.data.segment;
                     if (segmentText) {
                         let segmentBubble = createAiMessageBubble();
                         updateAiBubbleContent(segmentBubble, segmentText);
                     }
                 } else if (parsed.event === 'status') {
-                    // 状态更新
                     if (parsed.data.updates) {
-                        // 更新 gameState 中存在的字段
                         if (!gameState) gameState = {};
                         const updates = parsed.data.updates;
                         Object.keys(updates).forEach(k => {
@@ -420,13 +402,11 @@ async function sendMessage(textOverride) {
                         });
                         updateStatusBar(gameState);
 
-                        // 如果位置变化，同步地图
                         const locUpdate = updates.location;
                         if (locUpdate && locUpdate.lng && locUpdate.lat) {
                             clearMarkers();
                             addMarker(locUpdate.lng, locUpdate.lat, locUpdate.name || '当前位置', true);
                             panTo(locUpdate.lng, locUpdate.lat);
-                            // 隐藏交通按钮（已经到达新位置）
                             document.getElementById('transport-btns').classList.add('hidden');
                             selectedPoi = null;
                         }
@@ -435,12 +415,10 @@ async function sendMessage(textOverride) {
                         addSystemMessage(parsed.data.system_reply);
                     }
                 } else if (parsed.event === 'done') {
-                    // 对话结束，各个分段已在前文独立生成，无需额外操作
                 }
             }
         }
 
-        // 检查游戏是否结束（重新请求状态确认）
         await checkGameOver();
     } catch (err) {
         console.error('聊天请求失败:', err);
@@ -620,7 +598,6 @@ async function doSearch() {
         }
 
         const poiList = result.data.poi_list;
-        // 按距离由近及远排序（提取数值比较）
         poiList.sort((a, b) => {
             const da = parseFloat(String(a.distance).replace(/[^0-9.]/g, '')) || 0;
             const db = parseFloat(String(b.distance).replace(/[^0-9.]/g, '')) || 0;
@@ -636,13 +613,11 @@ async function doSearch() {
             </div>
         `).join('');
 
-        // 点击搜索结果
         resultsEl.querySelectorAll('.search-result-item').forEach(item => {
             item.addEventListener('click', () => {
                 const idx = parseInt(item.dataset.index);
                 const poi = poiList[idx];
                 selectPoi(poi);
-                // 高亮选中项
                 resultsEl.querySelectorAll('.search-result-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
             });
@@ -659,22 +634,17 @@ function selectPoi(poi) {
 
     // 地图标注
     clearMarkers();
-    // 重新添加当前位置标记
     if (gameState && gameState.location) {
         addMarker(gameState.location.lng, gameState.location.lat, gameState.location.name, true);
     }
-    // 添加 POI 标记
     addMarker(poi.lng, poi.lat, poi.name, false);
     panTo(poi.lng, poi.lat);
 
-    // 显示交通方式按钮
     document.getElementById('transport-btns').classList.remove('hidden');
-    // 更新按钮文字，标注目的地
     document.querySelectorAll('.transport-btn').forEach(btn => {
         btn.title = `${btn.textContent}去${poi.name}`;
     });
 
-    // 隐藏旧的详情卡片
     document.getElementById('poi-detail-card').classList.add('hidden');
 }
 
@@ -694,7 +664,6 @@ async function fetchRoutes(transportMode) {
     const optionsEl = document.getElementById('route-options');
     const titleEl = document.getElementById('route-title');
 
-    // 交通方式中文标签映射
     const modeLabels = { walking: '步行', bicycling: '骑行', driving: '驾车', transit: '公交' };
 
     titleEl.textContent = `${modeLabels[transportMode] || ''}去 ${selectedPoi.name}`;
@@ -734,15 +703,12 @@ async function fetchRoutes(transportMode) {
             `;
         }).join('');
 
-        // 点击路线确认出行
         optionsEl.querySelectorAll('.route-option').forEach(opt => {
             opt.addEventListener('click', () => {
                 const idx = parseInt(opt.dataset.index);
                 const chosen = routes[idx];
                 modal.classList.add('hidden');
-                // 重置计时器（因为即将发送消息，sendMessage 会计算时间）
                 lastActivityTime = Date.now();
-                // 自动发送出行消息
                 const msg = `我们${chosen.label}去${selectedPoi.name}吧`;
                 sendMessage(msg);
                 hidePoiDetail();

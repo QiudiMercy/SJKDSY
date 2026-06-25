@@ -7,14 +7,6 @@ class Referee:
     @staticmethod
     def validate_and_apply(state: GameState, updates: dict) -> dict:
         """
-        updates 是 LLM 请求的更新，例如：
-        {
-            "money_delta": -35,
-            "stamina_delta": -5,
-            "mood_delta": 10,
-            "time_advance_min": 25,
-            "reason": "打车前往太古里"
-        }
         返回系统裁定结果和最终应用后的状态快照
         """
         logs = []

@@ -256,7 +256,7 @@ body {
     border-top: 1px solid #E8E8E8;
 }
 
-/* 通用输入框样式 */
+/* 输入框 */
 .common-input {
     flex: 1;
     padding: 10px 15px;
@@ -265,7 +265,7 @@ body {
     font-size: 14px;
 }
 
-/* 通用按钮样式 */
+/* 按钮 */
 .common-button {
     padding: 10px 20px;
     background-color: #1890FF;
@@ -305,9 +305,7 @@ body {
 
 
 
-/* =============================================================================
-   新增样式 — 视图切换、消息分类、搜索、路线、结算
-   ============================================================================= */
+/* 视图切换、消息、搜索、路线、结算 */
 
 /* ---- 视图切换 ---- */
 .view { }
@@ -493,7 +491,7 @@ body {
     overflow: hidden;
 }
 
-/* ---- 搜索面板 (覆盖旧规则) ---- */
+/* ---- 搜索面板 ---- */
 .search-panel {
     background: #fff;
     border-radius: 12px;
@@ -673,10 +671,10 @@ body {
     font-size: 14px;
 }
 
-/* ---- 消息分类 ---- */
+/* ---- 消息 ---- */
 .message { display: flex; max-width: 100%; }
 
-/* 用户消息 — 靠右，蓝色 */
+/* 用户消息 */
 .msg-user { justify-content: flex-end; }
 .msg-user .message-bubble {
     background: #1890FF;
@@ -689,7 +687,7 @@ body {
     word-break: break-word;
 }
 
-/* AI 消息 — 靠左，粉色 */
+/* AI 消息 */
 .msg-ai { justify-content: flex-start; }
 .msg-ai .message-bubble {
     background: #ffe6f0;
@@ -702,7 +700,7 @@ body {
     word-break: break-word;
 }
 
-/* 系统消息 — 居中，灰色小字 */
+/* 系统消息 */
 .msg-system { justify-content: center; }
 .message-system-text {
     background: #f5f5f5;
@@ -714,7 +712,7 @@ body {
     text-align: center;
 }
 
-/* AI 正在输入动画 */
+/* 输入动画 */
 .typing-indicator {
     display: flex;
     align-items: center;
@@ -795,11 +793,8 @@ body {
     line-height: 2;
 }
 
-/* =============================================================================
-   响应式设计
-   ============================================================================= */
+/* 响应式设计 */
 
-/* 手机端 */
 @media screen and (max-width: 768px) {
     .main-content {
         flex-direction: column;
@@ -826,7 +821,6 @@ body {
     .route-details { flex-direction: column; gap: 4px; }
 }
 
-/* 平板和电脑端 */
 @media screen and (min-width: 768px) {
     .app-container {
         padding: 10px;

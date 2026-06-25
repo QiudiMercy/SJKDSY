@@ -5,9 +5,7 @@ from core.config import dbmanager
 import pandas as pd
 
 class SendMsg(Tool):
-    """
-    发送一段短消息到前端（拟人化分段发送）
-    """
+    """发送一段短消息到前端（拟人化分段发送）"""
     name: str = "send_message"
     description: str = "给用户发送消息，一般情况下字数介于10-50之间"
 
@@ -140,8 +138,6 @@ class SearchPOITool(Tool):
         if keyword:
             search_keyword = keyword.strip()
 
-            # 1. 精准匹配：地点名称完整包含关键词，或类型完整包含关键词。
-            # 关键词由 AI 根据上下文提炼，工具不再硬编码删除语气词/地点后缀。
             exact_df = self._query_poi(
                 "name LIKE ? OR type LIKE ?",
                 (f"%{search_keyword}%", f"%{search_keyword}%"),
@@ -149,7 +145,6 @@ class SearchPOITool(Tool):
             )
             self._merge_poi_rows(exact_df, "exact", result_map)
 
-            # 2. 模糊匹配：使用 AI 提炼后的关键词生成短片段，提升召回。
             fuzzy_keywords = self._build_fuzzy_keywords(search_keyword)
             if fuzzy_keywords:
                 fuzzy_clauses = " OR ".join(["name LIKE ? OR type LIKE ?" for _ in fuzzy_keywords])
@@ -157,7 +152,7 @@ class SearchPOITool(Tool):
                 fuzzy_df = self._query_poi(fuzzy_clauses, fuzzy_params, limit=3000)
                 self._merge_poi_rows(fuzzy_df, "fuzzy", result_map)
         else:
-            # 附近推荐：扩大候选范围后统一按距离排序，避免数据库返回顺序影响推荐质量
+
             if self.current_lng and self.current_lat:
                 nearby_df = self.db.get_df(
                     """
@@ -177,8 +172,7 @@ class SearchPOITool(Tool):
         pois = []
         for row in result_map.values():
             dist = haversine_distance(self.current_lng, self.current_lat, row["lng"], row["lat"]) if self.current_lng and self.current_lat else 0
-            # POI 数据通常来自国内地图服务，坐标系为 GCJ-02；百度地图底图使用 BD-09。
-            # 这里只做 GCJ-02 -> BD-09，避免错误地按 WGS-84 二次偏移。
+
             bd_lng, bd_lat = gcj02_to_bd09(row["lng"], row["lat"])
             pois.append({
                 "poi_uid": row["poi_uid"],
@@ -189,8 +183,7 @@ class SearchPOITool(Tool):
                 "distance": dist,
                 "match_type": row["match_type"]
             })
-            
-        # 始终按距离由近到远返回；无当前位置时保持查询顺序
+
         if self.current_lng and self.current_lat:
             pois.sort(key=lambda x: x["distance"])
             
@@ -210,7 +203,7 @@ class SearchPOITool(Tool):
 
 
 class PlanRouteTool(Tool):
-    """规划移动路线 (基于原生 SQL 检索)"""
+    """规划移动路线"""
 
     @property
     def name(self): return "plan_route"
@@ -236,14 +229,13 @@ class PlanRouteTool(Tool):
     def execute(self, arguments: dict) -> dict:
         target_poi_uid = arguments.get("target_poi_uid", "")
         
-        # 原生 SQL 参数化查询目的地
+        # 查询目的地
         poi_df = self.db.get_df("SELECT name, lng, lat FROM poi WHERE poi_uid = ?", (target_poi_uid,))
         if poi_df.empty:
             return {"error": "POI 不存在"}
             
         row = poi_df.iloc[0]
         dist = haversine_distance(self.current_lng, self.current_lat, row["lng"], row["lat"])
-        # POI 数据通常来自国内地图服务，坐标系为 GCJ-02；百度地图底图使用 BD-09。
         bd_lng, bd_lat = gcj02_to_bd09(row["lng"], row["lat"])
         
         return {

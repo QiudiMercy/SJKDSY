@@ -45,7 +45,7 @@ class Agent(ABC):
         self.tools_lists: list[Tool] = []
         self.messages: list[Message] = []
 
-        # 从数据库中初始化数据 (使用参数化查询，解决 no such column 崩溃)
+        # 从数据库初始化 agent 数据
         agent_definition = self.db.get_df(
             "SELECT role_name, system_prompt FROM agent_definitions WHERE agent_id = ?",
             (self.id,)

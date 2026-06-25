@@ -1,10 +1,8 @@
 from core.config import dbmanager
 
 def init_db():
-    """
-    初始化并更新数据库中智能体的 System Prompt (完全原生 SQL 方案，确保大模型行为规范)
-    """
-    # 使用 INSERT OR REPLACE 确保每次启动服务都自动覆盖并更新最新的 Prompt，无需手动删库
+    """初始化智能体 System Prompt"""
+    # 使用 INSERT OR REPLACE 覆盖更新 Prompt
     dbmanager.execute(
         """
         INSERT OR REPLACE INTO agent_definitions (agent_id, role_name, system_prompt)
@@ -52,4 +50,4 @@ def init_db():
 5. **无状态变化时绝对沉默**：如果本次对话没有任何数值状态变更、位置移动或时间流逝，你**必须保持绝对的沉默，不要调用任何工具，也不要回复任何文本内容（直接返回空白即可）**。你的沉默是系统判断不需要更新的唯一标准！"""
         )
     )
-    print("Default agent definitions initialized and updated successfully!")
+    print("智能体定义初始化完成！")

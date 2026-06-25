@@ -16,7 +16,7 @@ class RouteEstimateRequest(BaseModel):
     target_poi_uid: str
     current_lng: float
     current_lat: float
-    transport_mode: str = ""  # walking / bicycling / driving / transit，空则返回全部
+    transport_mode: str = ""
 
 class RouteOption(BaseModel):
     method: str

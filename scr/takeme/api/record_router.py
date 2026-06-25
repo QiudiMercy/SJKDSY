@@ -14,7 +14,6 @@ def get_records(page: int = 1, limit: int = 10):
     
     offset = (page - 1) * limit
     
-    # 分页检索
     games_df = dbmanager.get_df(
         """
         SELECT game_uid, start_time, score, current_money, evaluation 

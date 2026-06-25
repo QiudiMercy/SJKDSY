@@ -40,9 +40,6 @@ async def serve_index():
 
 if __name__ == "__main__":
     import uvicorn
-    print("\n" + "="*50)
-    print("Game Backend Service Started!")
-    print("Please Ctrl+Click to visit: http://127.0.0.1:8000")
-    print("="*50 + "\n")
+    print("\nGame Backend Service Started!\nhttp://127.0.0.1:8000\n")
     # 保持 0.0.0.0 方便局域网访问
     uvicorn.run(app, host="0.0.0.0", port=8000)

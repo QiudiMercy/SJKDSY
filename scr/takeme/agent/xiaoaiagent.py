@@ -8,15 +8,16 @@ import json
 import re
 
 def split_short_segments(text: str, min_len: int = 10, max_len: int = 20) -> list[str]:
-    # 彻底过滤 <think>...</think> 标签及其包裹的所有推理链路
+    """消息过滤"""
+
     text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
-    # 同时过滤裸露的 <think> 和 </think> 标签防止残留
+
     text = text.replace('<think>', '').replace('</think>', '').strip()
     
     if not text:
         return []
         
-    # 按标点符号（，。！？、~～；) 对文本进行初步切割
+
     pattern = re.compile(r'([^，。！？、~～；\s,.\!?~;]+[，。！？、~～；,\.!\?~;]*)')
     raw_clauses = pattern.findall(text)
     if not raw_clauses:
@@ -33,7 +34,6 @@ def split_short_segments(text: str, min_len: int = 10, max_len: int = 20) -> lis
         else:
             if current_seg:
                 segments.append(current_seg)
-            # 如果单句就已经超长，按 max_len 切片
             while len(clause) > max_len:
                 segments.append(clause[:max_len])
                 clause = clause[max_len:]
@@ -46,7 +46,6 @@ def split_short_segments(text: str, min_len: int = 10, max_len: int = 20) -> lis
 class XiaoAiAgent(Agent):
     """
     小爱 — 游戏虚拟角色
-    从外地来成都的年轻女性，第一次在成都游玩，性格活泼可爱，会有自然的情绪变化
     """
 
     def __init__(self, dbmanager):
@@ -61,24 +60,24 @@ class XiaoAiAgent(Agent):
         """
         用户发送消息 -> 小爱处理决策 -> 返回分段消息文本列表
         """
-        # 1. 动态加载最新的运行时游戏状态
+        # 动态加载游戏状态
         from states.state import GameState
         state = GameState(game_uid=game_uid, db=self.db)
 
-        # 2. 动态注入当前位置坐标以初始化工具 (小爱不应该有修改/更新 status 的工具，该功能仅限裁判拥有)
+        # 注入工具
         self.tools_lists = [
             SendMsg(self.messages),
             SearchPOITool(db=self.db, current_lng=state.lng, current_lat=state.lat),
             PlanRouteTool(db=self.db, current_lng=state.lng, current_lat=state.lat)
         ]
 
-        # 3. 读取近期的聊天上下文 (还原为大模型所需的 assistant 角色)
+        # 读取聊天上下文
         history_message = chatmessage.get_all_messages(game_uid)
         for msg in history_message:
             if msg["role"] == "xiaoai":
                 msg["role"] = "assistant"
 
-        # 4. 构建 System Prompt 并拼接上下文
+        # 构建 System Prompt
         prompt = [
             {
                 "role": "system",
@@ -86,7 +85,7 @@ class XiaoAiAgent(Agent):
             }
         ] + history_message + [{"role": "user", "content": content}]
 
-        # 5. 调用大模型获取响应
+        # 调用大模型
         response = self._parse(
             self.client.chat.completions.create(
                 model=self.model,
@@ -95,9 +94,8 @@ class XiaoAiAgent(Agent):
             )
         )
 
-        # 6. 大模型请求工具调用时的递归处理环 (支持 role: tool 消息追加)
+        # 工具调用递归处理
         while response.has_tool_calls:
-            # 追加 assistant 消息及其 tool_calls 定义
             prompt.append({
                 "role": "assistant",
                 "content": response.content or "",
@@ -114,7 +112,6 @@ class XiaoAiAgent(Agent):
                 ]
             })
 
-            # 执行工具调用，并将返回值填回 prompt 历史
             for tc in response.tool_calls:
                 tool_res = self.execute_tool(tc)
                 if isinstance(tool_res, dict):
@@ -128,7 +125,7 @@ class XiaoAiAgent(Agent):
                     "content": tool_res_str
                 })
 
-            # 重新投喂给大模型
+            # 重新调用大模型
             response = self._parse(
                 self.client.chat.completions.create(
                     model=self.model,
@@ -137,11 +134,11 @@ class XiaoAiAgent(Agent):
                 )
             )
 
-        # 7. 保存本次交互的 User 消息到数据库
+        # 保存用户消息
         user_msg = Message(role="user", content=content)
         chatmessage.store_message(message=user_msg, game_uid=game_uid)
 
-        # 8. 保存小爱通过 send_message 产生的拟人分段消息并回传 (进行强制 10-20 字极短拆分)
+        # 分段保存小爱消息
         result = []
         for msg in self.messages:
             split_contents = split_short_segments(msg.content, min_len=10, max_len=20)
@@ -150,8 +147,6 @@ class XiaoAiAgent(Agent):
                 chatmessage.store_message(message=chunk_msg, game_uid=game_uid)
                 result.append(chunk)
 
-        # 9. 容错与段落智能拆分：如果大模型直接吐出了带有换行的纯文本回复，我们按照换行符进行切割，
-        # 并强制拆分成 10-20 字极短句消息写入数据库并回传。
         if not result and response.content:
             split_contents = split_short_segments(response.content, min_len=10, max_len=20)
             for chunk in split_contents:
@@ -163,7 +158,7 @@ class XiaoAiAgent(Agent):
 
     def get_system_prompt(self, game_uid: str) -> str:
         """
-        原生 SQL 查询实时游戏状态并拼装 System Prompt
+        SQL 查询实时游戏状态并拼装 System Prompt
         """
         state_df = self.db.get_df(
             """
@@ -178,7 +173,7 @@ class XiaoAiAgent(Agent):
             
         row = state_df.iloc[0]
         
-        # 智能时间段修饰，以绝对防止大模型将 morning (08:00) 误判为凌晨/深夜
+        # 智能时间段
         t_str = str(row["current_time"])
         try:
             h = int(t_str.split(":")[0])
@@ -205,7 +200,7 @@ class XiaoAiAgent(Agent):
         return self.system_prompt + prompt
 
 
-# 内部依赖工具 SendMsg (在 execute 时向消息实体数组注入实体)
+# 内部依赖工具 SendMsg
 class SendMsg(Tool):
     """
     发送一段短消息到前端（拟人化分段发送）

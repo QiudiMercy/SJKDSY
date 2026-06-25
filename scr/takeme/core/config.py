@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     init_location_name: str = "成都东站"
 
 settings = Settings()
-print("配置加载成功：", settings.llm_base_url)
+print(f"配置加载成功：{settings.llm_base_url}")
 
 # 封装数据库服务，全局唯一连接入口
 
@@ -45,9 +45,7 @@ class DBManager:
     def __init__(self):
         self.db_url = Path(settings.database_url)
 
-        # 确保数据库存在
         if not self.db_url.exists():
-            # 如果数据库文件不存在，创建一个空文件
             self.db_url.touch()
 
             # 创建表

@@ -3,9 +3,7 @@ import math
 
 
 class Tool(ABC):
-    """
-    LLM Function Calling 工具基类
-    """
+    """LLM Function Calling 工具基类"""
 
     name: str
     description: str
@@ -38,8 +36,6 @@ def haversine_distance(lng1, lat1, lng2, lat2):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     return R * c
 
-##测试数据，后续需要替换成数据库查询
-# 临时测试：手动插入几条 POI
 def insert_mock_poi(db):
     from models.poi_model import POI
     mock_data = [

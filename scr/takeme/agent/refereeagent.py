@@ -17,9 +17,8 @@ class RefereeAgent(Agent):
             id="referee",
             dbmanager=dbmanager
         )
-        self.messages = []  # 存入本次交互的消息实体 List[Message]
-        
-        # 初始化工具并绑定当前运行时状态机
+        self.messages = []
+
         self.tools_lists = [
             SendMsg(self.messages),
             UpgradeState(gamestate, self)
@@ -31,9 +30,9 @@ class RefereeAgent(Agent):
         """
         用户发送消息 -> 小爱回复消息 -> 裁判介入裁定系统事件并发送系统消息
         """
-        # 获取所有的聊天记录，并安全地在本地进行反向查找（获取最近的一轮对话）
+        # 获取最近一轮对话
         history_message = chatmessage.get_all_messages(game_uid)
-        history_message.reverse()  # 修复 .reverse() 原地排序返回 None 的致命 Bug
+        history_message.reverse()
         
         dialog = []
         for msg in history_message:
@@ -41,7 +40,6 @@ class RefereeAgent(Agent):
             if msg["role"] == "user":
                 break
                 
-        # 翻转回正常的时间顺序传给大模型做上下文
         dialog.reverse()
         
         prompt = [
@@ -49,7 +47,7 @@ class RefereeAgent(Agent):
             {"role": "user", "content": json.dumps(dialog, ensure_ascii=False)}
         ]
         
-        # 调用大模型生成裁判裁定
+        # 调用大模型
         response = self._parse(
             self.client.chat.completions.create(
                 model=self.model,
@@ -58,7 +56,7 @@ class RefereeAgent(Agent):
             )
         )
         
-        # 检查工具调用情况并循环
+        # 工具调用递归处理
         while response.has_tool_calls:
             prompt.append({
                 "role": "assistant",
@@ -97,7 +95,7 @@ class RefereeAgent(Agent):
                 )
             )
             
-        # 存入本次产生的 System 或 Referee 消息 (只有在有状态更新时，才允许发送或存储通知)
+        # 存入本次产生的 System 或 Referee 消息
         result = []
         import re
         if self.upgrade_called:
@@ -126,7 +124,7 @@ class RefereeAgent(Agent):
     
     def get_system_prompt(self, game_uid: str) -> str:
         """
-        原生 SQL 查询状态，拼装裁判专属 Prompt
+        SQL 查询状态，拼装裁判专属 Prompt
         """
         state_df = self.db.get_df(
             """
@@ -141,7 +139,7 @@ class RefereeAgent(Agent):
             
         row = state_df.iloc[0]
 
-        # 智能时间段修饰，以绝对防止大模型将 morning (08:00) 误判为凌晨/深夜
+        # 智能时间段
         t_str = str(row["current_time"])
         try:
             h = int(t_str.split(":")[0])
@@ -170,9 +168,7 @@ class RefereeAgent(Agent):
 
 # 内置消息发送工具
 class SendMsg(Tool):
-    """
-    发送一段裁判裁定短消息到前端（系统消息）
-    """
+    """发送系统消息到前端"""
     name: str = "send_message"
     description: str = "向玩家发送系统的裁定/提醒/通知消息，字数应精简（10-50字）"
 
@@ -263,7 +259,7 @@ class UpgradeState(Tool):
                 self.gamestate.advance_time(delta)
             elif var == "current_location_name":
                 self.gamestate.location_name = val_str
-                # 原生 SQL 智能查询：当裁判更新位置名称时，自动查询 poi 表获取经纬度，并同步更新状态坐标 (WGS-84)
+                # 自动查询 poi 表更新坐标
                 poi_df = self.gamestate.db.get_df(
                     "SELECT lng, lat FROM poi WHERE name LIKE ? LIMIT 1",
                     (f"%{val_str}%",)

@@ -11,7 +11,6 @@ def send_message(req: SendMessageRequest):
     service = ChatService()
     result = service.handle_message(req.game_uid, req.content, req.time_passed_min)
 
-    # 如果返回了错误，直接返回字典 (FastAPI 会自动序列化为 JSON)
     if result.get("code") != 200:
         return result
 
@@ -22,17 +21,15 @@ def send_message(req: SendMessageRequest):
     full_reply = inner_data.get("reply", "")
 
     def generate():
-        # 逐段发送消息给前端
+
         for i, segment in enumerate(segments):
             event_data = json.dumps({"segment": segment, "seq": i + 1}, ensure_ascii=False)
             yield f"event: message\ndata: {event_data}\n\n"
 
-        # 有系统裁定或状态变更时，发送 status 事件
         if new_status:
             status_data = json.dumps({"updates": new_status, "system_reply": system_reply}, ensure_ascii=False)
             yield f"event: status\ndata: {status_data}\n\n"
 
-        # 发送完成 done 事件
         done_data = json.dumps({"reply": full_reply}, ensure_ascii=False)
         yield f"event: done\ndata: {done_data}\n\n"
 

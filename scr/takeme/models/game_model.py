@@ -13,12 +13,12 @@ class Game(Base):
     current_money = Column(Integer, default=1000)
     current_stamina = Column(Integer, default=100)
     current_mood = Column(Integer, default=100)
-    current_time = Column(String, default="08:00")    # "HH:MM"
+    current_time = Column(String, default="08:00")    # "HH:MM" 格式
     current_lng = Column(Float)
     current_lat = Column(Float)
     current_location_name = Column(String)
     is_active = Column(Boolean, default=True)
-    current_fullness = Column(Integer, default=100)       # 饱食度 0-100
-    route_summary = Column(Text, nullable=True)            # JSON: 游玩路线地点列表
-    score = Column(Integer, nullable=True)                 # 最终评分 0-100
-    evaluation = Column(Text, nullable=True)               # 评价文案
+    current_fullness = Column(Integer, default=100)
+    route_summary = Column(Text, nullable=True)
+    score = Column(Integer, nullable=True)
+    evaluation = Column(Text, nullable=True)

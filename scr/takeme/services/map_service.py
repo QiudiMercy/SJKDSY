@@ -9,7 +9,7 @@ class MapService:
 
     def _query_poi_with_bbox(self, kw: str, lng: float, lat: float) -> pd.DataFrame:
         """
-        利用经纬度范围圈定（BBox）过滤并返回模糊检索候选集
+        利用经纬度范围圈定过滤并返回模糊检索候选集
         """
         if lng and lat:
             # 0.15 度约为 15km 范围
@@ -23,7 +23,6 @@ class MapService:
                 """,
                 (f"%{kw}%", lng - 0.15, lng + 0.15, lat - 0.15, lat + 0.15)
             )
-            # 容错：如果 BBox 没搜够，退化回全局模糊检索
             if len(df) < 5:
                 df = self.db.get_df(
                     "SELECT poi_uid, name, type, lng, lat FROM poi WHERE name LIKE ? LIMIT 500",
@@ -40,28 +39,25 @@ class MapService:
         """
         根据关键字搜索 POI点位，若空则检索附近的前10个推荐点位 (完全手写 SQL)
         """
-        # 原生 SQL 检索
+
         if keyword:
             clean_keyword = keyword.strip()
-            # 提炼核心名词：过滤口语、动词以及特定地点后缀
+
             for suffix in ["相亲角", "相亲", "那里", "这儿", "附近", "玩玩", "逛逛", "看看", "店", "门", "去", "吃", "喝", "玩"]:
                 clean_keyword = clean_keyword.replace(suffix, "")
             clean_keyword = clean_keyword.strip()
             if not clean_keyword:
                 clean_keyword = keyword
 
-            # 1. 尝试清洗后的完整关键词查询
             poi_df = self._query_poi_with_bbox(clean_keyword, lng, lat)
-            
-            # 2. 备用降级：如果无结果且词长 > 4，截取前 4 字（如 "人民公园相亲角" 自动降级为 "人民公园"）
+
             if poi_df.empty and len(clean_keyword) > 4:
                 poi_df = self._query_poi_with_bbox(clean_keyword[:4], lng, lat)
-                
-            # 3. 极速退化：如果依然无结果且词长 > 2，截取前 2 字（如 "宽窄巷子东门" -> "宽窄"）
+
             if poi_df.empty and len(clean_keyword) > 2:
                 poi_df = self._query_poi_with_bbox(clean_keyword[:2], lng, lat)
         else:
-            # 附近推荐：基于 BBox 筛选附近的点位，确保拉取到的绝对是附近最近的点位
+
             if lng and lat:
                 poi_df = self.db.get_df(
                     """
@@ -80,8 +76,7 @@ class MapService:
         pois = []
         for _, row in poi_df.iterrows():
             dist = haversine_distance(lng, lat, row["lng"], row["lat"]) if lng and lat else 0
-            # POI 数据通常来自国内地图服务，坐标系为 GCJ-02；百度地图底图使用 BD-09。
-            # 这里只做 GCJ-02 -> BD-09，避免错误地按 WGS-84 二次偏移。
+
             bd_lng, bd_lat = gcj02_to_bd09(row["lng"], row["lat"])
             pois.append({
                 "poi_uid": row["poi_uid"],
@@ -92,7 +87,7 @@ class MapService:
                 "lat": bd_lat
             })
 
-        # 如果有当前定位且是空检索，按距离从近到远排序，取前10
+        # 按距离排序，取前10
         if lng and lat:
             pois.sort(key=lambda x: x["distance"])
 

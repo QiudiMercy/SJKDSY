@@ -313,11 +313,7 @@ body {
 .hidden { display: none !important; }
 
 /* ---- 开始页 ---- */
-.start-container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 40px 20px;
-}
+
 .start-hero {
     text-align: center;
     background: #fff;
@@ -561,37 +557,6 @@ body {
 .result-name { font-size: 14px; font-weight: 500; color: #333; }
 .result-type { font-size: 12px; color: #999; }
 .result-distance { font-size: 13px; color: #1890FF; font-weight: 500; }
-
-/* ---- POI 详情卡片 ---- */
-.poi-detail-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    padding: 14px 16px;
-}
-.poi-detail-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-}
-.btn-close {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: #999;
-    cursor: pointer;
-}
-.btn-close:hover { color: #333; }
-.poi-detail-body {
-    margin: 8px 0 12px;
-    font-size: 13px;
-    color: #666;
-    display: flex;
-    gap: 16px;
-}
 
 /* ---- 路线弹窗 ---- */
 .route-modal {

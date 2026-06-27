@@ -1,10 +1,3 @@
-// =============================================================================
-// 《带我玩》— 成都一日游 AI 游戏 · 前端脚本
-// =============================================================================
-
-// =============================================================================
-// 全局状态
-// =============================================================================
 let gameUid = null;
 let gameState = null;
 let map = null;
@@ -15,47 +8,6 @@ let recordsPage = 1;
 let lastActivityTime = null;
 let gameTimerInterval = null; // 计时器句柄
 
-// =============================================================================
-// 工具函数
-// =============================================================================
-
-/** 切换视图 */
-function showView(viewId) {
-    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-    const target = document.getElementById(viewId);
-    if (target) target.classList.remove('hidden');
-}
-
-/** API 请求封装 (非 SSE) */
-async function apiGet(path, params = {}) {
-    const url = new URL(path, window.location.origin);
-    Object.entries(params).forEach(([k, v]) => {
-        if (v !== null && v !== undefined) url.searchParams.append(k, v);
-    });
-    const resp = await fetch(url.toString());
-    return resp.json();
-}
-
-async function apiPost(path, body = {}) {
-    const resp = await fetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
-    return resp.json();
-}
-
-/** 格式化距离显示 — 后端返回的是 km 数值或 "X.Xkm" 字符串 */
-function formatDistance(raw) {
-    const num = parseFloat(String(raw).replace(/[^0-9.]/g, ''));
-    if (isNaN(num)) return String(raw);
-    if (num < 1) return Math.round(num * 1000) + 'm';
-    return num.toFixed(1) + 'km';
-}
-
-// =============================================================================
-// 初始化 — 页面加载完成
-// =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // 开始页
     showView('view-start');
@@ -63,15 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 绑定事件
     document.getElementById('btn-start-game').addEventListener('click', startGame);
-    document.getElementById('btn-back-home').addEventListener('click', backToHome);
+    document.getElementById('search-btn').addEventListener('click', doSearch);
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') doSearch();
+    }); 
     document.getElementById('send-btn').addEventListener('click', () => sendMessage());
     document.getElementById('message-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    document.getElementById('search-btn').addEventListener('click', doSearch);
-    document.getElementById('search-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') doSearch();
-    });
+    // 弹窗取消
     document.getElementById('route-close').addEventListener('click', hideRouteModal);
 
     document.addEventListener('click', (e) => {
@@ -88,11 +40,15 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchRoutes(mode);
         });
     });
+    document.getElementById('btn-back-home').addEventListener('click', backToHome);
 });
 
-// =============================================================================
-// 历史战绩
-// =============================================================================
+function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    const target = document.getElementById(viewId);
+    if (target) target.classList.remove('hidden');
+}
+
 async function loadRecords(page) {
     recordsPage = page;
     const listEl = document.getElementById('records-list');
@@ -102,7 +58,7 @@ async function loadRecords(page) {
     try {
         const result = await apiGet('/api/records/list', { page, limit: 10 });
         if (result.code !== 200) {
-            listEl.innerHTML = '<p class="empty-text">暂无战绩</p>';
+            listEl.innerHTML = '<p class="empty-text">无法请求历史战绩</p>';
             return;
         }
         const data = result.data;
@@ -121,7 +77,6 @@ async function loadRecords(page) {
             </div>
         `).join('');
 
-        // 分页按钮
         let pagesHtml = '';
         if (data.total_pages > 1) {
             for (let i = 1; i <= data.total_pages; i++) {
@@ -138,9 +93,32 @@ async function loadRecords(page) {
     }
 }
 
-// =============================================================================
-// 游戏开始
-// =============================================================================
+async function apiGet(path, params = {}) {
+    const url = new URL(path, window.location.origin);
+    Object.entries(params).forEach(([k, v]) => {
+        if (v !== null && v !== undefined) url.searchParams.append(k, v);
+    });
+    const resp = await fetch(url.toString());
+    return resp.json();
+}
+
+async function apiPost(path, body = {}) {
+    const resp = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    return resp.json();
+}
+
+// 格式化距离显示 — 后端返回的是 km 数值或 "X.Xkm" 字符串
+function formatDistance(raw) {
+    const num = parseFloat(String(raw).replace(/[^0-9.]/g, ''));
+    if (isNaN(num)) return String(raw);
+    if (num < 1) return Math.round(num * 1000) + 'm';
+    return num.toFixed(1) + 'km';
+}
+
 async function startGame() {
     const btn = document.getElementById('btn-start-game');
     btn.disabled = true;
@@ -159,23 +137,15 @@ async function startGame() {
         gameUid = data.game_uid;
         gameState = data.init_state;
         gameState.is_game_over = false;
-
-        // 更新状态栏
-        updateStatusBar(gameState);
-
-        // 切换到游戏视图
+        
         showView('view-game');
 
-        // 初始化地图
+        updateStatusBar(gameState);
+        
         initMap(gameState.location.lng, gameState.location.lat);
 
-        // 加载历史消息
-        await loadChatHistory();
-
-        // 启用聊天输入
         setChatEnabled(true);
 
-        // 添加系统欢迎消息
         addSystemMessage('游戏开始！你在成都东站接到了小爱。带她开启美好的一天吧！');
 
         // 启动游戏计时器（1:100 时间流逝）
@@ -188,9 +158,7 @@ async function startGame() {
     }
 }
 
-// =============================================================================
-// 状态栏更新
-// =============================================================================
+// 状态栏
 function updateStatusBar(state) {
     if (!state) return;
     const setVal = (id, val) => {
@@ -227,9 +195,6 @@ function updateStatusBar(state) {
     }
 }
 
-// =============================================================================
-// 百度地图初始化
-// =============================================================================
 function initMap(lng, lat) {
     const container = document.getElementById('map-container');
     if (!container) return;
@@ -239,7 +204,7 @@ function initMap(lng, lat) {
         currentMarkers = [];
     }
 
-    var centerLng = lng || 104.0668;
+    const centerLng = lng || 104.0668;
     const centerLat = lat || 30.6598;
 
     map = new BMap.Map('map-container');
@@ -254,7 +219,6 @@ function initMap(lng, lat) {
     }
 }
 
-/** 在地图上添加标记 */
 function addMarker(lng, lat, title, isCenter = false) {
     const point = new BMap.Point(lng, lat);
 
@@ -310,30 +274,24 @@ function addMarker(lng, lat, title, isCenter = false) {
     return marker;
 }
 
-/** 清除所有标记 */
 function clearMarkers() {
     if (!map) return;
     currentMarkers.forEach(m => map.removeOverlay(m));
     currentMarkers = [];
 }
 
-/** 移动地图中心到指定坐标 */
+// 移动地图中心到指定坐标
 function panTo(lng, lat) {
     if (!map) return;
     map.panTo(new BMap.Point(lng, lat));
 }
 
-// =============================================================================
 // 聊天功能
-// =============================================================================
-
-/** 启用/禁用聊天输入 */
 function setChatEnabled(enabled) {
     document.getElementById('message-input').disabled = !enabled;
     document.getElementById('send-btn').disabled = !enabled;
 }
-
-/** 发送消息 (SSE 流式) */
+// 发送消息 (SSE 流式)
 async function sendMessage(textOverride) {
     const inputEl = document.getElementById('message-input');
     const content = textOverride || inputEl.value.trim();
@@ -429,7 +387,7 @@ async function sendMessage(textOverride) {
     }
 }
 
-/** 解析 SSE 事件字符串 */
+// 解析 SSE 事件字符串
 function parseSSEEvent(raw) {
     const lines = raw.split('\n');
     let eventType = '';
@@ -450,7 +408,7 @@ function parseSSEEvent(raw) {
     }
 }
 
-/** 检查游戏是否结束 */
+// 检查游戏是否结束
 async function checkGameOver() {
     if (!gameUid) return;
     try {
@@ -467,10 +425,7 @@ async function checkGameOver() {
     }
 }
 
-// =============================================================================
-// 聊天消息 UI
-// =============================================================================
-
+// 气泡
 function addUserMessage(text) {
     const container = document.getElementById('chat-messages');
     hideChatHint();
@@ -542,42 +497,7 @@ function scrollChatBottom() {
     }
 }
 
-// =============================================================================
-// 加载历史消息
-// =============================================================================
-async function loadChatHistory() {
-    if (!gameUid) return;
-    try {
-        const result = await apiGet('/api/chat/history', { game_uid: gameUid });
-        if (result.code !== 200 || !result.data || !result.data.messages) return;
-
-        const container = document.getElementById('chat-messages');
-        container.innerHTML = ''; // 清空
-        if (result.data.messages.length === 0) {
-            container.innerHTML = '<p class="chat-hint" id="chat-hint">开始和小爱对话吧~</p>';
-            return;
-        }
-        hideChatHint();
-
-        result.data.messages.forEach(msg => {
-            if (msg.role === 'user') {
-                addUserMessage(msg.content);
-            } else if (msg.role === 'xiaoai') {
-                const bubble = createAiMessageBubble();
-                updateAiBubbleContent(bubble, msg.content);
-            } else if (msg.role === 'system') {
-                addSystemMessage(msg.content);
-            }
-        });
-        scrollChatBottom();
-    } catch (err) {
-        console.error('加载历史消息失败:', err);
-    }
-}
-
-// =============================================================================
 // POI 搜索
-// =============================================================================
 async function doSearch() {
     const inputEl = document.getElementById('search-input');
     const keyword = inputEl.value.trim();
@@ -628,7 +548,7 @@ async function doSearch() {
     }
 }
 
-/** 选中 POI：地图标注 + 显示交通方式按钮 */
+// 选中 POI：地图标注 + 显示交通方式按钮
 function selectPoi(poi) {
     selectedPoi = poi;
 
@@ -644,19 +564,9 @@ function selectPoi(poi) {
     document.querySelectorAll('.transport-btn').forEach(btn => {
         btn.title = `${btn.textContent}去${poi.name}`;
     });
-
-    document.getElementById('poi-detail-card').classList.add('hidden');
 }
 
-function hidePoiDetail() {
-    document.getElementById('poi-detail-card').classList.add('hidden');
-    document.getElementById('transport-btns').classList.add('hidden');
-    selectedPoi = null;
-}
-
-// =============================================================================
 // 路线预估
-// =============================================================================
 async function fetchRoutes(transportMode) {
     if (!selectedPoi || !gameUid) return;
 
@@ -725,9 +635,7 @@ function hideRouteModal() {
     document.getElementById('transport-btns').classList.add('hidden');
 }
 
-// =============================================================================
 // 游戏结算
-// =============================================================================
 async function doSettle() {
     if (!gameUid) return;
     try {
@@ -761,9 +669,6 @@ async function doSettle() {
     }
 }
 
-// =============================================================================
-// 返回首页
-// =============================================================================
 function backToHome() {
     gameUid = null;
     gameState = null;
@@ -778,16 +683,13 @@ function backToHome() {
     document.getElementById('search-input').value = '';
     document.getElementById('search-results').classList.add('hidden');
     document.getElementById('search-results').innerHTML = '';
-    document.getElementById('poi-detail-card').classList.add('hidden');
     document.getElementById('transport-btns').classList.add('hidden');
     document.getElementById('route-modal').classList.add('hidden');
     showView('view-start');
     loadRecords(1);
 }
 
-// =============================================================================
 // HTML 转义
-// =============================================================================
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;

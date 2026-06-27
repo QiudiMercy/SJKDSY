@@ -11,9 +11,8 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- 视图 1：开始页 -->
+        <!-- 开始页 -->
         <div id="view-start" class="view">
-            <div class="start-container">
                 <div class="start-hero">
                     <h1 class="start-title">带我玩</h1>
                     <p class="start-subtitle">成都一日游 · AI 模拟游戏</p>
@@ -22,10 +21,11 @@
                         通过自然语言对话，带领小爱游览成都，<br>
                         规划路线、品尝美食、管理体力与心情。<br>
                         在一天之内（08:00 - 22:00），<br>
-                        让小爱度过最美好的一天吧.
+                        让小爱度过最美好的一天吧！
                     </p>
                     <button id="btn-start-game" class="btn-primary btn-large">开始游戏</button>
                 </div>
+
                 <div class="start-records">
                     <h2 class="section-title">历史战绩</h2>
                     <div id="records-list" class="records-list">
@@ -33,12 +33,10 @@
                     </div>
                     <div class="records-pagination" id="records-pagination"></div>
                 </div>
-            </div>
         </div>
 
-        <!-- 视图 2：主游戏界面 -->
+        <!-- 游戏页 -->
         <div id="view-game" class="view hidden">
-            <!-- 顶部状态栏 -->
             <header class="header">
                 <div class="header-left">
                     <span class="location-name" id="stat-location">成都东站</span>
@@ -88,16 +86,11 @@
                 </div>
             </header>
 
-            <!-- 主内容区 -->
             <main class="main-content">
-                <!-- 左侧：地图 -->
                 <div class="left-panel">
                     <div id="map-container" class="map-panel"></div>
                 </div>
-
-                <!-- 右侧：搜索 + 聊天 -->
                 <div class="right-panel">
-                    <!-- POI 搜索面板 -->
                     <div class="search-panel" id="search-panel">
                         <div class="search-header">
                             <h2 class="panel-title">地点搜索</h2>
@@ -115,20 +108,6 @@
                         <div id="search-results" class="search-results hidden"></div>
                     </div>
 
-                    <!-- POI 详情与路线 -->
-                    <div id="poi-detail-card" class="poi-detail-card hidden">
-                        <div class="poi-detail-header">
-                            <span id="poi-detail-name"></span>
-                            <button id="poi-detail-close" class="btn-close">&times;</button>
-                        </div>
-                        <div class="poi-detail-body">
-                            <p>类型：<span id="poi-detail-type"></span></p>
-                            <p>距离：<span id="poi-detail-distance"></span></p>
-                        </div>
-                        <button id="poi-route-btn" class="btn-primary btn-small">去这里</button>
-                    </div>
-
-                    <!-- 路线选择弹窗 -->
                     <div id="route-modal" class="route-modal hidden">
                         <div class="route-modal-content">
                             <h3 id="route-title">选择出行方式</h3>
@@ -136,8 +115,7 @@
                             <button id="route-close" class="btn-secondary">取消</button>
                         </div>
                     </div>
-
-                    <!-- 聊天面板 -->
+                    
                     <div class="chat-panel">
                         <h2 class="panel-title">对话小爱</h2>
                         <div class="chat-messages" id="chat-messages">
@@ -152,7 +130,7 @@
             </main>
         </div>
 
-        <!-- 视图 3：结算页 -->
+        <!-- 结算页 -->
         <div id="view-settle" class="view hidden">
             <div class="settle-container">
                 <h1 class="settle-title">游戏结束</h1>
